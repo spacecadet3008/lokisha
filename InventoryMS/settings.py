@@ -96,14 +96,11 @@ WSGI_APPLICATION = 'InventoryMS.wsgi.application'
 }"""
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'railway',
-        'USER': 'postgres',
-        'PASSWORD': 'tVdmENICXcdaiUSiTvCYTGUfGymraMtr',
-        'HOST': 'postgres.railway.internal',
-        'PORT': '5432'
-    }
+    'default': dj_database_url.config(
+        default='sqlite:///db.sqlite3',  # Fallback for local development
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -143,8 +140,7 @@ LOGOUT_URL = 'logout'
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR,'static')
-]
+STATICFILES_DIRS = [os.path.join(BASE_DIR,'static')]
 MEDIA_ROOT = os.path.join(BASE_DIR, 'static/images')
 MEDIA_URL = '/images/'
 
