@@ -89,7 +89,7 @@ def dashboard(request):
         "sale_dates_labels": sale_dates_labels,
         "sale_dates_values": sale_dates_values,
     }
-    return render(request, "store/dashboard.html", context)
+    return render(request, "store/index.html", context)
 
 
 class ProductListView(LoginRequiredMixin, ExportMixin, tables.SingleTableView):
