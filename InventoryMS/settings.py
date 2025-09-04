@@ -96,11 +96,14 @@ WSGI_APPLICATION = 'InventoryMS.wsgi.application'
 }"""
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',  # Fallback for local development
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'railway',
+        'USER': 'postgres',
+        'PASSWORD': 'YdnuOWMiwstXGJtxYyTJmrOBeIVzLcok',
+        'HOST': 'postgres.railway.internal',
+        'PORT': '5432'
+    }
 }
 
 # Password validation
