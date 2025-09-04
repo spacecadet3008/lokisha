@@ -1,1 +1,2 @@
-python manage.py migrate && python manage.py collectstatic --noinput && gunicorn yourproject.wsgi --workers 1
+
+web: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn myproject.wsgi
