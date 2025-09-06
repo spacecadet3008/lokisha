@@ -2,6 +2,7 @@
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
+from . import views
 
 # Local app imports
 from .views import (
@@ -40,6 +41,10 @@ urlpatterns = [
         InvoiceDeleteView.as_view(),
         name='invoice-delete'
     ),
+
+    path('autocomplete/customers/', views.autocomplete_customers, name='autocomplete_customers'),
+    path('autocomplete/items/', views.autocomplete_items, name='autocomplete_items'),
+
 ]
 
 # Static media files configuration for development

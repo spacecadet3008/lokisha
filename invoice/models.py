@@ -2,7 +2,7 @@ from django.db import models
 from django_extensions.db.fields import AutoSlugField
 
 from store.models import Item
-
+from accounts.models import Customer
 
 class Invoice(models.Model):
     """
@@ -26,12 +26,12 @@ class Invoice(models.Model):
         auto_now=True,
         verbose_name='Date (e.g., 2022/11/22)'
     )
-    customer_name = models.CharField(max_length=30)
+    customer_name = models.ForeignKey(Customer, related_name = 'customer', verbose_name = 'Customer name',on_delete=models.CASCADE)
     contact_number = models.CharField(max_length=13)
-    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    item = models.CharField(max_length=10000)
     price_per_item = models.FloatField(verbose_name='Price Per Item (Tsh)')
     quantity = models.FloatField(default=0.00)
-    shipping = models.FloatField(verbose_name='Shipping and Handling')
+    shipping = models.FloatField(verbose_name='Shipping and Handling', blank = True)
     total = models.FloatField(
         verbose_name='Total Amount (Tsh)', editable=False
     )

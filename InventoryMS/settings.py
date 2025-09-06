@@ -95,7 +95,6 @@ WSGI_APPLICATION = 'InventoryMS.wsgi.application'
         'PASSWORD':'Simwimba@3008'
     }
 }"""
-
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///db.sqlite3',  # Fallback for local development
