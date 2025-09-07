@@ -3,6 +3,7 @@ from django.urls import reverse,reverse_lazy
 from django.views.decorators.http import require_GET
 from django.http import JsonResponse
 from django.db.models import Q
+from django.forms import formset_factory
 
 # Authentication and permissions
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -22,7 +23,9 @@ from .models import Invoice
 from accounts.models import Customer
 from store.models import Item
 from .tables import InvoiceTable
-from .forms import InvoiceForm
+from .forms import InvoiceForm,InvoiceItemFormSet
+from django.shortcuts import get_object_or_404
+from django.http import Http404
 
 
 class InvoiceListView(LoginRequiredMixin, ExportMixin, SingleTableView):
@@ -37,42 +40,145 @@ class InvoiceListView(LoginRequiredMixin, ExportMixin, SingleTableView):
     table_pagination = False  # Disable table pagination
 
 
-class InvoiceDetailView(DetailView):
-    """
-    View for displaying invoice details.
-    """
+class InvoiceDetailView(LoginRequiredMixin, DetailView):
     model = Invoice
-    template_name = 'invoice/invoicedetail.html'
+    template_name = 'invoice/invoice_detail.html'
+    context_object_name = 'invoice'
+    pk_url_kwarg = 'pk'  # Default is 'pk', but you can change it if needed
 
-    def get_success_url(self):
+    def get_queryset(self):
         """
-        Return the URL to redirect to after a successful action.
+        Optimize database queries by prefetching related data
         """
-        return reverse('invoice-detail', kwargs={'slug': self.object.pk})
+        return Invoice.objects.prefetch_related(
+            'items__item'
+        ).select_related(
+            'customer_name'
+        )
 
+    def get_object(self, queryset=None):
+        """
+        Get the invoice object with additional checks
+        """
+        if queryset is None:
+            queryset = self.get_queryset()
+        
+        # Get the pk from URL parameters
+        pk = self.kwargs.get(self.pk_url_kwarg)
+        
+        if pk is None:
+            raise AttributeError(
+                "InvoiceDetailView must be called with an object pk in the URLconf."
+            )
+        
+        # Try to get the invoice
+        try:
+            invoice = get_object_or_404(queryset, pk=pk)
+        except Http404:
+            # You could add custom logging or handling here
+            raise Http404("Invoice not found or you don't have permission to view it.")
+        
+        return invoice
+
+    def get_context_data(self, **kwargs):
+        """
+        Add additional context data to the template
+        """
+        context = super().get_context_data(**kwargs)
+        invoice = self.object
+        
+        # Add calculated fields or additional data
+        context['page_title'] = f"Invoice #{invoice.invoice_number}"
+        context['breadcrumb'] = [
+            {'name': 'Invoices', 'url': 'invoicelist'},
+            {'name': f'Invoice #{invoice.invoice_number}', 'url': ''}
+        ]
+        
+        # Add any additional context you might need
+        context['company_name'] = "Business Solutions Ltd."
+        context['company_address'] = "123 Business Street, Dar es Salaam, Tanzania"
+        context['company_phone'] = "+255 123 456 789"
+        context['company_email'] = "info@businesssolutions.tz"
+        
+        return context
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Additional pre-dispatch logic if needed
+        """
+        # You can add permission checks, logging, etc. here
+        return super().dispatch(request, *args, **kwargs)
+
+    def render_to_response(self, context, **response_kwargs):
+        """
+        Custom response handling if needed
+        """
+        # Check if it's a print request
+        if self.request.GET.get('print') == 'true':
+            context['print_mode'] = True
+        
+        # Check if it's a PDF export request
+        if self.request.GET.get('format') == 'pdf':
+            return self.generate_pdf_response(context)
+        
+        return super().render_to_response(context, **response_kwargs)
+
+    def generate_pdf_response(self, context):
+        """
+        Method to generate PDF response (would need additional setup)
+        """
+        # This would require additional libraries like reportlab or weasyprint
+        # For now, we'll just redirect to the HTML version
+        from django.shortcuts import redirect
+        return redirect('invoice_detail', pk=self.object.pk)
 
 class InvoiceCreateView(LoginRequiredMixin, CreateView):
     model = Invoice
     template_name = 'invoice/invoice.html'
     form_class = InvoiceForm
-
+    
     def get_success_url(self):
-        return reverse_lazy('invoicelist')
+        return reverse('invoicelist')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context['formset'] = InvoiceItemFormSet(self.request.POST)
+        else:
+            context['formset'] = InvoiceItemFormSet()
+        
+        # Pass items for the dropdown
+        context['items'] = Item.objects.all()
+        return context
 
     def form_valid(self, form):
-        # The item field should now be a proper Item object due to clean_item()
-        item = form.cleaned_data.get('item')
-        if item:
-            form.instance.price_per_item = item.price
+        context = self.get_context_data()
+        formset = context['formset']
         
-        customer = form.cleaned_data.get('customer_name')
-        if customer:
-            form.instance.contact_number = customer.phone or form.cleaned_data.get('contact_number', '')
-        
-        return super().form_valid(form)
+        if formset.is_valid():
+            # Save the invoice first
+            self.object = form.save(commit=False)
+            
+            # Set any additional fields if needed
+            # self.object.some_field = some_value
+            
+            self.object.save()
+            
+            # Now save the formset with the invoice instance
+            formset.instance = self.object
+            formset.save()
+            
+            return super().form_valid(form)
+        else:
+            print("Formset errors:", formset.errors)
+            print("Formset non-form errors:", formset.non_form_errors())
+            return self.form_invalid(form)
 
     def form_invalid(self, form):
-        print("Form errors:", form.errors)  # Debugging
+        print("Form errors:", form.errors)
+        context = self.get_context_data()
+        formset = context['formset']
+        print("Formset errors:", formset.errors)
         return super().form_invalid(form)
 
 # Autocomplete views
@@ -119,28 +225,38 @@ def autocomplete_items(request):
         results = []
     return JsonResponse({'results': results})
 
-class InvoiceUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    """
-    View for updating an existing invoice.
-    """
+class InvoiceUpdateView(LoginRequiredMixin, UpdateView):
     model = Invoice
-    template_name = 'invoice/invoiceupdate.html'
-    fields = [
-        'customer_name', 'contact_number', 'item',
-        'price_per_item', 'quantity', 'shipping'
-    ]
-
+    form_class = InvoiceForm
+    template_name = 'invoice/invoice_form.html'  # Create this template
+    
     def get_success_url(self):
-        """
-        Return the URL to redirect to after a successful update.
-        """
-        return reverse('invoicelist')
+        return reverse_lazy('invoice_detail', kwargs={'pk': self.object.pk})
 
-    def test_func(self):
-        """
-        Determine if the user has permission to update the invoice.
-        """
-        return self.request.user.is_superuser
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context['formset'] = InvoiceItemFormSet(self.request.POST, instance=self.object)
+        else:
+            context['formset'] = InvoiceItemFormSet(instance=self.object)
+        context['items'] = Item.objects.all()  # For the item dropdown
+        return context
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        formset = context['formset']
+        
+        if formset.is_valid():
+            response = super().form_valid(form)
+            formset.instance = self.object
+            formset.save()
+            
+            # Update invoice totals
+            self.object.save()
+            
+            return response
+        else:
+            return self.form_invalid(form)
 
 
 class InvoiceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):

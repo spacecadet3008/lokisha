@@ -47,7 +47,7 @@ class Item(models.Model):
     quantity = models.IntegerField(default=0)
     price = models.FloatField(default=0)
     expiring_date = models.DateTimeField(null=True, blank=True)
-    vendor = models.ForeignKey(Vendor, on_delete=models.SET_NULL, null=True)
+    vendor = models.ForeignKey(Vendor, on_delete=models.SET_NULL, blank = True,null=True)
 
     def __str__(self):
         """

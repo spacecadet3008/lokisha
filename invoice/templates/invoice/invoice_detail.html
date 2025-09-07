@@ -1,0 +1,242 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block title %}Invoice #{{ invoice.invoice_number }}{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .invoice-container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .invoice-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 30px;
+    }
+    
+    .invoice-status {
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-weight: 600;
+        background: rgba(255,255,255,0.2);
+    }
+    
+    .info-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-left: 4px solid #28a745;
+    }
+    
+    .items-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .items-table th {
+        background: #28a745;
+        color: white;
+        padding: 15px;
+        text-align: left;
+    }
+    
+    .items-table td {
+        padding: 15px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .items-table tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .total-row {
+        background: #e9ecef;
+        font-weight: 600;
+    }
+    
+    .action-btn {
+        border-radius: 8px;
+        padding: 12px 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
+    .company-logo {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Navigation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'invoicelist' %}">Invoices</a></li>
+                    <li class="breadcrumb-item active">Invoice #{{ invoice.invoice_number }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="invoice-container">
+        <!-- Header -->
+        <div class="invoice-header">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="mb-1"><i class="fas fa-file-invoice me-2"></i>INVOICE</h1>
+                    <p class="mb-0 opacity-75">Official Business Document</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <span class="invoice-status">
+                        {% if invoice.grand_total > 1000 %}PAID{% else %}PENDING{% endif %}
+                    </span>
+                    <h2 class="mt-2 mb-0">#{{ invoice.invoice_number }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="p-4">
+            <!-- Company & Invoice Info -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="info-card">
+                        <div class="company-logo mb-3">LMT</div>
+                        <h5>LMT Management</h5>
+                        <p class="mb-1">123 Business Street</p>
+                        <p class="mb-1">Dar es Salaam, Tanzania</p>
+                        <p class="mb-1">Phone: +255 123 456 789</p>
+                        <p class="mb-0">Email: info@lmtmanagement.tz</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-card">
+                        <h6 class="text-success mb-3"><i class="fas fa-info-circle me-2"></i>INVOICE DETAILS</h6>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Invoice Number:</strong>
+                            </div>
+                            <div class="col-6">#{{ invoice.invoice_number }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Invoice Date:</strong>
+                            </div>
+                            <div class="col-6">{{ invoice.date|date:"F d, Y" }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Due Date:</strong>
+                            </div>
+                            <div class="col-6">{{ invoice.date|date:"F d, Y" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Info -->
+            <div class="info-card mb-4">
+                <h6 class="text-success mb-3"><i class="fas fa-user me-2"></i>BILL TO</h6>
+                <h5>{{ invoice.customer_name }}</h5>
+                <p class="mb-1">Phone: {{ invoice.contact_number }}</p>
+                {% if invoice.customer_name.email %}
+                <p class="mb-1">Email: {{ invoice.customer_name.email }}</p>
+                {% endif %}
+                {% if invoice.customer_name.address %}
+                <p class="mb-0">Address: {{ invoice.customer_name.address }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Items Table -->
+            <div class="table-responsive mb-4">
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in invoice.items.all %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.item.name }}</strong>
+                                {% if item.item.description %}
+                                <br><small class="text-muted">{{ item.item.description }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.quantity }}</td>
+                            <td>Tsh {{ item.price_per_item|floatformat:2 }}</td>
+                            <td><strong>Tsh {{ item.total_price|floatformat:2 }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="total-row">
+                            <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
+                            <td><strong>Tsh {{ invoice.total|floatformat:2 }}</strong></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="3" class="text-end"><strong>Shipping:</strong></td>
+                            <td><strong>Tsh {{ invoice.shipping|floatformat:2 }}</strong></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
+                            <td><strong class="text-success">Tsh {{ invoice.grand_total|floatformat:2 }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row">
+                <div class="col-12 text-center">
+                    <button onclick="window.print()" class="btn btn-primary action-btn me-3">
+                        <i class="fas fa-print me-2"></i>Print Invoice
+                    </button>
+                    <a href="{% url 'invoicelist' %}" class="btn btn-secondary action-btn me-3">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                    </a>
+                    <a href="#" class="btn btn-success action-btn">
+                        <i class="fas fa-download me-2"></i>Download PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+$(document).ready(function() {
+    // Add any custom JavaScript for the invoice detail page
+    console.log('Invoice detail page loaded');
+});
+</script>
+{% endblock %}

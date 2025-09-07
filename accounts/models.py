@@ -131,10 +131,11 @@ class Customer(models.Model):
         db_table = 'Customers'
 
     def __str__(self) -> str:
-        return self.first_name + " " + self.last_name
+        return f"{self.first_name or ''} {self.last_name or ''}".strip()
 
     def get_full_name(self):
-        return self.first_name + " " + self.last_name
+        return f"{self.first_name or ''} {self.last_name or ''}".strip()   
+        
 
     def to_select2(self):
         item = {

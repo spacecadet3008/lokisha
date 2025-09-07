@@ -1,0 +1,193 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block title %}Update Invoice #{{ object.invoice_number }}{% endblock %}
+
+{% block stylesheets %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<style>
+    .invoice-form-container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .invoice-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 30px;
+    }
+    
+    .section-card {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        border-left: 4px solid #28a745;
+    }
+    
+    .item-row {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        border: 1px solid #e9ecef;
+        position: relative;
+    }
+    
+    .remove-item-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: #dc3545;
+        border: none;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        color: white;
+        cursor: pointer;
+    }
+    
+    .add-item-btn {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        border-radius: 50px;
+        padding: 15px 30px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        margin: 20px auto;
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="invoice-form-container">
+        <div class="invoice-header">
+            <h1><i class="fas fa-edit me-2"></i>Update Invoice #{{ object.invoice_number }}</h1>
+        </div>
+
+        <div class="p-4">
+            <form method="post" id="invoice-form">
+                {% csrf_token %}
+                
+                <!-- Customer Section -->
+                <div class="section-card">
+                    <h4><i class="fas fa-user me-2"></i>Customer Information</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Customer</label>
+                                {{ form.customer_name }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Contact Number</label>
+                                {{ form.contact_number }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items Section -->
+                <div class="section-card">
+                    <h4><i class="fas fa-shopping-cart me-2"></i>Items</h4>
+                    
+                    {{ formset.management_form }}
+                    <div id="items-container">
+                        {% for form in formset %}
+                        <div class="item-row">
+                            {% for hidden in form.hidden_fields %}
+                                {{ hidden }}
+                            {% endfor %}
+                            
+                            {% if form.instance.pk %}{{ form.DELETE }}{% endif %}
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Item</label>
+                                        {{ form.item }}
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Quantity</label>
+                                        {{ form.quantity }}
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Price</label>
+                                        {{ form.price_per_item }}
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Total</label>
+                                        <input type="text" class="form-control" 
+                                               value="{% if form.instance.pk %}{{ form.instance.total_price }}{% else %}0.00{% endif %}" 
+                                               readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="remove-item-btn">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <button type="button" id="add-item-btn" class="add-item-btn">
+                        <i class="fas fa-plus me-2"></i>Add Item
+                    </button>
+                </div>
+
+                <!-- Shipping -->
+                <div class="section-card">
+                    <h4><i class="fas fa-truck me-2"></i>Shipping</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Shipping Cost</label>
+                                {{ form.shipping }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fas fa-save me-2"></i>Update Invoice
+                    </button>
+                    <a href="{% url 'invoice-detail' pk=object.pk %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Initialize select2
+    $('.item-select').select2();
+    
+    // Add item functionality
+    $('#add-item-btn').click(function() {
+        // This would need JavaScript to dynamically add new forms
+        alert('Add item functionality would be implemented here');
+    });
+});
+</script>
+{% endblock %}

@@ -16,31 +16,11 @@ from .views import (
 # URL patterns
 urlpatterns = [
     # Invoice URLs
-    path(
-        'invoices/',
-        InvoiceListView.as_view(),
-        name='invoicelist'
-    ),
-    path(
-        'invoice/<slug:slug>/',
-        InvoiceDetailView.as_view(),
-        name='invoice-detail'
-    ),
-    path(
-        'new-invoice/',
-        InvoiceCreateView.as_view(),
-        name='invoice-create'
-    ),
-    path(
-        'invoice/<slug:slug>/update/',
-        InvoiceUpdateView.as_view(),
-        name='invoice-update'
-    ),
-    path(
-        'invoice/<int:pk>/delete/',
-        InvoiceDeleteView.as_view(),
-        name='invoice-delete'
-    ),
+    path('invoices/',InvoiceListView.as_view(),name='invoicelist'),
+    path('invoice/<int:pk>/', views.InvoiceDetailView.as_view(), name='invoice-detail'),
+    path('new-invoice/',InvoiceCreateView.as_view(),name='invoice-create'),
+    path('invoice/<int:pk>/update/', views.InvoiceUpdateView.as_view(), name='invoice-update'),
+    path('invoice/<int:pk>/delete/',InvoiceDeleteView.as_view(), name='invoice-delete'),
 
     path('autocomplete/customers/', views.autocomplete_customers, name='autocomplete_customers'),
     path('autocomplete/items/', views.autocomplete_items, name='autocomplete_items'),

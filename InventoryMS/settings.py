@@ -88,7 +88,7 @@ WSGI_APPLICATION = 'InventoryMS.wsgi.application'
 """DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'lmt',
+        'NAME': 'lgs',
         'HOST': 'localhost',
         'PORT': '3306',
         'USER': 'root',
