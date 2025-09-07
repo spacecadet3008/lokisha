@@ -45,6 +45,7 @@ class InvoiceDetailView(LoginRequiredMixin, DetailView):
     template_name = 'invoice/invoice_detail.html'
     context_object_name = 'invoice'
     pk_url_kwarg = 'pk'  # Default is 'pk', but you can change it if needed
+    sucess_url = reverse_lazy('invoicelist')
 
     def get_queryset(self):
         """
