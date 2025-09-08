@@ -10,7 +10,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 # Class-based views
 from django.views.generic import (
-    DetailView, CreateView, UpdateView, DeleteView
+    DetailView, CreateView, UpdateView, DeleteView,View,ListView
 )
 from django.views.generic.edit import FormView
 
@@ -19,34 +19,145 @@ from django_tables2 import SingleTableView
 from django_tables2.export.views import ExportMixin
 
 # Local app imports
-from .models import Invoice
+from .models import Invoice,Delivery
 from accounts.models import Customer
 from store.models import Item
-from .tables import InvoiceTable
-from .forms import InvoiceForm,InvoiceItemFormSet
+from .tables import InvoiceTable,ProformaTable
+from .forms import InvoiceForm,InvoiceItemFormSet,DeliveryForm,DeliveryItemFormSet
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 
 
 class InvoiceListView(LoginRequiredMixin, ExportMixin, SingleTableView):
-    """
-    View for listing invoices with table export functionality.
-    """
+    """View for listing regular invoices (non-proforma)"""
     model = Invoice
     table_class = InvoiceTable
     template_name = 'invoice/invoicelist.html'
     context_object_name = 'invoices'
     paginate_by = 10
-    table_pagination = False  # Disable table pagination
+    table_pagination = False
+    export_name = 'invoices'
+    
+    def get_queryset(self):
+        """Return only regular invoices (non-proforma) with optional filtering"""
+        queryset = Invoice.objects.filter(is_proforma=False).select_related(
+            'customer_name'
+        ).prefetch_related(
+            'items'
+        ).order_by('-date')
+        
+        # Search filter
+        search_query = self.request.GET.get('q')
+        if search_query:
+            queryset = queryset.filter(
+                Q(invoice_number__icontains=search_query) |
+                Q(customer_name__first_name__icontains=search_query) |
+                Q(customer_name__last_name__icontains=search_query) |
+                Q(contact_number__icontains=search_query)
+            )
+        
+        # Status filter
+        status_filter = self.request.GET.get('status')
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Invoices'
+        context['breadcrumb'] = [
+            {'name': 'Dashboard', 'url': reverse_lazy('dashboard')},
+            {'name': 'Invoices', 'url': ''}
+        ]
+        
+        # Add status filter options
+        context['status_choices'] = [
+            ('', 'All Statuses'),
+            ('draft', 'Draft'),
+            ('sent', 'Sent'),
+            ('paid', 'Paid'),
+            ('cancelled', 'Cancelled')
+        ]
+        
+        # Pass current filter values
+        context['current_search'] = self.request.GET.get('q', '')
+        context['current_status'] = self.request.GET.get('status', '')
+        
+        return context
+
+class ProformaListView(LoginRequiredMixin, ExportMixin, SingleTableView):
+    """View for listing proforma invoices with table export functionality."""
+    model = Invoice
+    table_class = ProformaTable
+    template_name = 'invoice/proforma_list.html'
+    context_object_name = 'proformas'
+    paginate_by = 10
+    table_pagination = False
+    export_name = 'proforma_invoices'
+    
+    def get_queryset(self):
+        """Return only proforma invoices with optional filtering"""
+        queryset = Invoice.objects.filter(is_proforma=True).select_related(
+            'customer_name'
+        ).prefetch_related(
+            'items'
+        ).order_by('-date')
+        
+        # Search filter
+        search_query = self.request.GET.get('q')
+        if search_query:
+            queryset = queryset.filter(
+                Q(invoice_number__icontains=search_query) |
+                Q(customer_name__first_name__icontains=search_query) |
+                Q(customer_name__last_name__icontains=search_query) |
+                Q(contact_number__icontains=search_query)
+            )
+        
+        # Status filter
+        status_filter = self.request.GET.get('status')
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Proforma Invoices'
+        context['breadcrumb'] = [
+            {'name': 'Dashboard', 'url': reverse_lazy('dashboard')},
+            {'name': 'Proforma Invoices', 'url': ''}
+        ]
+        
+        # Add status filter options
+        context['status_choices'] = [
+            ('', 'All Statuses'),
+            ('draft', 'Draft'),
+            ('sent', 'Sent'),
+            ('accepted', 'Accepted'),
+            ('cancelled', 'Cancelled')
+        ]
+        
+        # Pass current filter values
+        context['current_search'] = self.request.GET.get('q', '')
+        context['current_status'] = self.request.GET.get('status', '')
+        
+        return context
 
 
+# views.py
 class InvoiceDetailView(LoginRequiredMixin, DetailView):
     model = Invoice
-    template_name = 'invoice/invoice_detail.html'
+    template_name = 'invoice/invoicedetail.html'
     context_object_name = 'invoice'
-    pk_url_kwarg = 'pk'  # Default is 'pk', but you can change it if needed
-    sucess_url = reverse_lazy('invoicelist')
+    pk_url_kwarg = 'pk'
 
+    def get_template_names(self):
+        # Use different templates for proforma vs regular invoices
+        if self.object.is_proforma:
+            return ['invoice/invoicedetail.html']
+        return ['invoice/invoicedetail.html']
+    
     def get_queryset(self):
         """
         Optimize database queries by prefetching related data
@@ -57,30 +168,6 @@ class InvoiceDetailView(LoginRequiredMixin, DetailView):
             'customer_name'
         )
 
-    def get_object(self, queryset=None):
-        """
-        Get the invoice object with additional checks
-        """
-        if queryset is None:
-            queryset = self.get_queryset()
-        
-        # Get the pk from URL parameters
-        pk = self.kwargs.get(self.pk_url_kwarg)
-        
-        if pk is None:
-            raise AttributeError(
-                "InvoiceDetailView must be called with an object pk in the URLconf."
-            )
-        
-        # Try to get the invoice
-        try:
-            invoice = get_object_or_404(queryset, pk=pk)
-        except Http404:
-            # You could add custom logging or handling here
-            raise Http404("Invoice not found or you don't have permission to view it.")
-        
-        return invoice
-
     def get_context_data(self, **kwargs):
         """
         Add additional context data to the template
@@ -88,58 +175,50 @@ class InvoiceDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         invoice = self.object
         
-        # Add calculated fields or additional data
-        context['page_title'] = f"Invoice #{invoice.invoice_number}"
-        context['breadcrumb'] = [
-            {'name': 'Invoices', 'url': 'invoicelist'},
-            {'name': f'Invoice #{invoice.invoice_number}', 'url': ''}
-        ]
+        if invoice.is_proforma:
+            context['page_title'] = f"Proforma Invoice #{invoice.invoice_number}"
+            context['breadcrumb'] = [
+                {'name': 'Proforma Invoices', 'url': 'proforma_list'},
+                {'name': f'Proforma #{invoice.invoice_number}', 'url': ''}
+            ]
+        else:
+            context['page_title'] = f"Invoice #{invoice.invoice_number}"
+            context['breadcrumb'] = [
+                {'name': 'Invoices', 'url': 'invoicelist'},
+                {'name': f'Invoice #{invoice.invoice_number}', 'url': ''}
+            ]
         
-        # Add any additional context you might need
+        # Add company information
         context['company_name'] = "Business Solutions Ltd."
         context['company_address'] = "123 Business Street, Dar es Salaam, Tanzania"
         context['company_phone'] = "+255 123 456 789"
         context['company_email'] = "info@businesssolutions.tz"
         
+        # Add source proforma info if this invoice was converted
+        if not invoice.is_proforma and hasattr(invoice, 'proforma_source'):
+            context['proforma_source'] = invoice.proforma_source
+        
         return context
-
-    def dispatch(self, request, *args, **kwargs):
-        """
-        Additional pre-dispatch logic if needed
-        """
-        # You can add permission checks, logging, etc. here
-        return super().dispatch(request, *args, **kwargs)
-
-    def render_to_response(self, context, **response_kwargs):
-        """
-        Custom response handling if needed
-        """
-        # Check if it's a print request
-        if self.request.GET.get('print') == 'true':
-            context['print_mode'] = True
-        
-        # Check if it's a PDF export request
-        if self.request.GET.get('format') == 'pdf':
-            return self.generate_pdf_response(context)
-        
-        return super().render_to_response(context, **response_kwargs)
-
-    def generate_pdf_response(self, context):
-        """
-        Method to generate PDF response (would need additional setup)
-        """
-        # This would require additional libraries like reportlab or weasyprint
-        # For now, we'll just redirect to the HTML version
-        from django.shortcuts import redirect
-        return redirect('invoice_detail', pk=self.object.pk)
 
 class InvoiceCreateView(LoginRequiredMixin, CreateView):
     model = Invoice
     template_name = 'invoice/invoice.html'
     form_class = InvoiceForm
     
+    def get_initial(self):
+        initial = super().get_initial()
+        # Set default as proforma if requested
+        if self.request.GET.get('type') == 'proforma':
+            initial['is_proforma'] = True
+        return initial
+    
     def get_success_url(self):
-        return reverse('invoicelist')
+        if self.object.is_proforma:
+            print(f"Redirecting to proforma detail: {self.object.pk}")
+            return reverse('proforma_detail', kwargs={'pk': self.object.pk})
+        else:
+            print(f"Redirecting to invoice detail: {self.object.pk}")
+            return reverse('invoice-detail', kwargs={'pk': self.object.pk})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -150,9 +229,15 @@ class InvoiceCreateView(LoginRequiredMixin, CreateView):
         
         # Pass items for the dropdown
         context['items'] = Item.objects.all()
+        
+        # Check if creating a proforma
+        if self.request.GET.get('type') == 'proforma':
+            context['is_proforma'] = True
+            context['page_title'] = 'Create Proforma Invoice'
+        
         return context
 
-    def form_valid(self, form):
+    def form_valid(self, form):  # This should be indented properly
         context = self.get_context_data()
         formset = context['formset']
         
@@ -160,8 +245,19 @@ class InvoiceCreateView(LoginRequiredMixin, CreateView):
             # Save the invoice first
             self.object = form.save(commit=False)
             
-            # Set any additional fields if needed
-            # self.object.some_field = some_value
+            # Debug print
+            print(f"Creating invoice - is_proforma: {self.object.is_proforma}")
+            # Ensure it's marked as proforma if coming from proforma create URL
+            if 'proforma' in self.request.path or self.request.GET.get('type') == 'proforma':
+                self.object.is_proforma = True
+            
+            # Set initial status based on button clicked
+            if 'save_draft' in self.request.POST:
+                self.object.status = 'draft'
+            elif 'save_send' in self.request.POST:
+                self.object.status = 'sent'
+            else:
+                self.object.status = 'draft'  # Default to draft
             
             self.object.save()
             
@@ -172,15 +268,7 @@ class InvoiceCreateView(LoginRequiredMixin, CreateView):
             return super().form_valid(form)
         else:
             print("Formset errors:", formset.errors)
-            print("Formset non-form errors:", formset.non_form_errors())
             return self.form_invalid(form)
-
-    def form_invalid(self, form):
-        print("Form errors:", form.errors)
-        context = self.get_context_data()
-        formset = context['formset']
-        print("Formset errors:", formset.errors)
-        return super().form_invalid(form)
 
 # Autocomplete views
 @require_GET
@@ -232,7 +320,7 @@ class InvoiceUpdateView(LoginRequiredMixin, UpdateView):
     template_name = 'invoice/invoice_form.html'  # Create this template
     
     def get_success_url(self):
-        return reverse_lazy('invoice_detail', kwargs={'pk': self.object.pk})
+        return reverse_lazy('invoice-detail', kwargs={'pk': self.object.pk})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -279,3 +367,128 @@ class InvoiceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         Determine if the user has permission to delete the invoice.
         """
         return self.request.user.is_superuser
+
+
+class ProformaConvertView(LoginRequiredMixin, View):
+    """View to convert a proforma invoice to a regular invoice"""
+    
+    def post(self, request, *args, **kwargs):
+        proforma = get_object_or_404(Invoice, pk=kwargs['pk'], is_proforma=True)
+        
+        if proforma.converted_to_invoice:
+            messages.warning(request, 'This proforma has already been converted.')
+            return redirect('proforma_detail', pk=proforma.pk)
+        
+        invoice = proforma.convert_to_invoice()
+        messages.success(request, f'Proforma converted to invoice #{invoice.invoice_number}')
+        
+        return redirect('invoice_detail', pk=invoice.pk)
+
+
+
+""" Delivery Invoice Views """
+
+# views.py
+class DeliveryListView(LoginRequiredMixin, ListView):
+    model = Delivery
+    template_name = 'invoice/delivery_list.html'
+    context_object_name = 'deliveries'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        queryset = Delivery.objects.select_related('customer_name').prefetch_related('items').order_by('-date')
+        
+        status_filter = self.request.GET.get('status')
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+            
+        search_query = self.request.GET.get('q')
+        if search_query:
+            queryset = queryset.filter(
+                Q(delivery_number__icontains=search_query) |
+                Q(customer_name__first_name__icontains=search_query) |
+                Q(customer_name__last_name__icontains=search_query)
+            )
+            
+        return queryset
+
+
+class DeliveryCreateView(LoginRequiredMixin, CreateView):
+    model = Delivery
+    form_class = DeliveryForm
+    template_name = 'invoice/delivery_form.html'
+    
+    def get_success_url(self):
+        return reverse('delivery_detail', kwargs={'pk': self.object.pk})
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context['formset'] = DeliveryItemFormSet(self.request.POST)
+        else:
+            context['formset'] = DeliveryItemFormSet()
+        context['items'] = Item.objects.all()
+        return context
+    
+    def form_valid(self, form):
+        context = self.get_context_data()
+        formset = context['formset']
+        
+        if formset.is_valid():
+            self.object = form.save()
+            formset.instance = self.object
+            formset.save()
+            return super().form_valid(form)
+        return self.form_invalid(form)
+
+
+class DeliveryDetailView(LoginRequiredMixin, DetailView):
+    model = Delivery
+    template_name = 'invoice/delivery_detail.html'
+    context_object_name = 'delivery'
+    
+
+class DeliveryUpdateView(LoginRequiredMixin, UpdateView):
+    model = Delivery
+    form_class = DeliveryForm
+    template_name = 'invoice/delivery_form.html'
+    
+    def get_success_url(self):
+        return reverse('delivery_detail', kwargs={'pk': self.object.pk})
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context['formset'] = DeliveryItemFormSet(self.request.POST, instance=self.object)
+        else:
+            # Pre-populate the formset with existing items
+            context['formset'] = DeliveryItemFormSet(instance=self.object)
+        context['items'] = Item.objects.all()
+        return context
+    
+    def form_valid(self, form):
+        context = self.get_context_data()
+        formset = context['formset']
+        
+        if formset.is_valid():
+            self.object = form.save()
+            formset.instance = self.object
+            formset.save()
+            return super().form_valid(form)
+        return self.form_invalid(form)
+
+
+class DeliveryConvertView(LoginRequiredMixin, View):
+    """Convert delivery to invoice"""
+    
+    def post(self, request, *args, **kwargs):
+        delivery = get_object_or_404(Delivery, pk=kwargs['pk'])
+        
+        if delivery.delivery_source:
+            messages.warning(request, 'This delivery has already been converted to an invoice.')
+            return redirect('delivery_detail', pk=delivery.pk)
+        
+        invoice = delivery.convert_to_invoice()
+        messages.success(request, f'Delivery converted to invoice #{invoice.invoice_number}')
+        
+        return redirect('invoice_detail', pk=invoice.pk)

@@ -1,0 +1,199 @@
+<!-- templates/invoice/delivery_detail.html -->
+{% extends "invoice/base_invoice.html" %}
+{% load static %}
+
+{% block title %}Delivery #{{ delivery.delivery_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="invoice-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h2><i class="fas fa-truck me-2"></i>Delivery #{{ delivery.delivery_number }}</h2>
+                <p class="mb-0">Date: {{ delivery.date|date:"M d, Y" }} | 
+                    Status: <span class="badge 
+                        {% if delivery.status == 'draft' %}bg-secondary
+                        {% elif delivery.status == 'preparing' %}bg-warning
+                        {% elif delivery.status == 'dispatched' %}bg-info
+                        {% elif delivery.status == 'delivered' %}bg-success
+                        {% else %}bg-danger{% endif %}">
+                        {{ delivery.status|title }}
+                    </span>
+                </p>
+            </div>
+            <div class="col-md-6 text-end">
+                <img src="{% static '../images/logo/lokisha_1.png' %}" style="width: 120px; "alt="Business Logo" height="60">
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <a href="{% url 'delivery_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to List
+                    </a>
+                </div>
+                <div>
+                    {% if not delivery.converted_to_invoice and delivery.status == 'delivered' %}
+                    <a href="{% url 'delivery_convert' delivery.pk %}" class="btn btn-success me-2">
+                        <i class="fas fa-exchange-alt me-1"></i> Convert to Invoice
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'delivery_edit' delivery.pk %}" class="btn btn-primary me-2">
+                        <i class="fas fa-edit me-1"></i> Edit
+                    </a>
+                    <a href="?print=true" class="btn btn-info" target="_blank">
+                        <i class="fas fa-print me-1"></i> Print
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Details -->
+    <div class="row">
+        <!-- Company Info -->
+        <div class="col-md-6">
+            <div class="card invoice-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">From</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-success">LOKISHA ENTERPRISE</h6>
+                    <p class="mb-1">P.O. Box 295, Arusha</p>
+                    <p class="mb-1">Phone: +255 123 456 789</p>
+                    <p class="mb-0">Email: info@lokisha.co.tz</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delivery Info -->
+        <div class="col-md-6">
+            <div class="card invoice-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Delivery Information</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Delivery #:</strong> {{ delivery.delivery_number }}</p>
+                    <p class="mb-1"><strong>Date:</strong> {{ delivery.date|date:"M d, Y" }}</p>
+                    <p class="mb-1"><strong>Status:</strong> 
+                        <span class="badge 
+                            {% if delivery.status == 'draft' %}bg-secondary
+                            {% elif delivery.status == 'preparing' %}bg-warning
+                            {% elif delivery.status == 'dispatched' %}bg-info
+                            {% elif delivery.status == 'delivered' %}bg-success
+                            {% else %}bg-danger{% endif %}">
+                            {{ delivery.status|title }}
+                        </span>
+                    </p>
+                    {% if delivery.converted_to_invoice %}
+                    <p class="mb-0"><strong>Converted to Invoice:</strong> 
+                        <a href="{% url 'invoice_detail' delivery.converted_to_invoice.pk %}" class="text-success">
+                            #{{ delivery.converted_to_invoice.invoice_number }}
+                        </a>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer and Delivery Address -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card invoice-card">
+                <div class="card-header">
+                    <h5 class="mb-0">Customer Information</h5>
+                </div>
+                <div class="card-body">
+                    <h6>{{ delivery.customer_name.first_name }} {{ delivery.customer_name.last_name }}</h6>
+                    <p class="mb-1">Phone: {{ delivery.contact_number }}</p>
+                    {% if delivery.customer_name.email %}
+                    <p class="mb-1">Email: {{ delivery.customer_name.email }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card invoice-card">
+                <div class="card-header">
+                    <h5 class="mb-0">Delivery Address</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ delivery.shipping_address|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="card invoice-card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Delivery Items</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-success">
+                        <tr>
+                            <th>Item</th>
+                            <th class="text-center">Quantity</th>
+                            <th class="text-end">Unit Price (Tsh)</th>
+                            <th class="text-end">Total (Tsh)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in delivery.items.all %}
+                        <tr>
+                            <td>{{ item.item.name }}</td>
+                            <td class="text-center">{{ item.quantity|floatformat:2 }}</td>
+                            <td class="text-end">{{ item.price_per_item|floatformat:2 }}</td>
+                            <td class="text-end">{{ item.total_price|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="3" class="text-end fw-bold">Total Value:</td>
+                            <td class="text-end fw-bold">
+                                Tsh {{ delivery_total|floatformat:2 }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Notes -->
+    {% if delivery.notes %}
+    <div class="card invoice-card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Delivery Notes</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-0">{{ delivery.notes|linebreaks }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Status Messages -->
+    {% if delivery.status == 'draft' %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        This is a draft delivery note. Update the status when ready.
+    </div>
+    {% endif %}
+
+    {% if delivery.converted_to_invoice %}
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle me-2"></i>
+        This delivery has been converted to Invoice #{{ delivery.converted_to_invoice.invoice_number }}.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

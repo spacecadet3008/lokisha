@@ -6,25 +6,50 @@ from . import views
 
 # Local app imports
 from .views import (
-    InvoiceListView,
-    InvoiceDetailView,
+    ProformaListView,
     InvoiceCreateView,
-    InvoiceUpdateView,
-    InvoiceDeleteView
+    InvoiceDetailView, 
+    InvoiceUpdateView, 
+    InvoiceDeleteView, 
+    InvoiceListView,
+    ProformaConvertView,
+    autocomplete_customers, 
+    autocomplete_items,
+    DeliveryListView,
+    DeliveryCreateView,
+    DeliveryDetailView,
+    DeliveryUpdateView,
+    DeliveryConvertView
+    
 )
 
 # URL patterns
 urlpatterns = [
-    # Invoice URLs
-    path('invoices/',InvoiceListView.as_view(),name='invoicelist'),
-    path('invoice/<int:pk>/', views.InvoiceDetailView.as_view(), name='invoice-detail'),
-    path('new-invoice/',InvoiceCreateView.as_view(),name='invoice-create'),
-    path('invoice/<int:pk>/update/', views.InvoiceUpdateView.as_view(), name='invoice-update'),
-    path('invoice/<int:pk>/delete/',InvoiceDeleteView.as_view(), name='invoice-delete'),
+    # Regular invoices
+    path('invoices/', InvoiceListView.as_view(), name='invoicelist'),
+    path('invoice/create/', InvoiceCreateView.as_view(), name='invoice-create'),
+    path('invoice/<int:pk>/', InvoiceDetailView.as_view(), name='invoice-detail'),
+    path('invoice/<int:pk>/update/', InvoiceUpdateView.as_view(), name='invoice-update'),
+    path('invoice/<int:pk>/delete/', InvoiceDeleteView.as_view(), name='invoice-delete'),
+    
+    # Proforma invoices
+    path('proformas/', ProformaListView.as_view(), name='proforma_list'),
+    path('proforma/create/', InvoiceCreateView.as_view(), name='proforma_create'),
+    path('proforma/<int:pk>/', InvoiceDetailView.as_view(), name='proforma_detail'),
+    path('proforma/<int:pk>/edit/', InvoiceUpdateView.as_view(), name='proforma_edit'),
+    path('proforma/<int:pk>/convert/', ProformaConvertView.as_view(), name='proforma_convert'),
+    path('proforma/<int:pk>/delete/', InvoiceDeleteView.as_view(), name='proforma_delete'),
 
-    path('autocomplete/customers/', views.autocomplete_customers, name='autocomplete_customers'),
-    path('autocomplete/items/', views.autocomplete_items, name='autocomplete_items'),
-
+    # Delivery 
+    path('deliveries/', DeliveryListView.as_view(), name='delivery_list'),
+    path('delivery/create/', DeliveryCreateView.as_view(), name='delivery_create'),
+    path('delivery/<int:pk>/', DeliveryDetailView.as_view(), name='delivery_detail'),
+    path('delivery/<int:pk>/edit/', DeliveryUpdateView.as_view(), name='delivery_edit'),
+    path('delivery/<int:pk>/convert/', DeliveryConvertView.as_view(), name='delivery_convert'),
+    
+    # Autocomplete
+    path('autocomplete/customers/', autocomplete_customers, name='autocomplete_customers'),
+    path('autocomplete/items/', autocomplete_items, name='autocomplete_items'),
 ]
 
 # Static media files configuration for development

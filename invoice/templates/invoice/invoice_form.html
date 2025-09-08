@@ -1,193 +1,474 @@
-{% extends "store/base.html" %}
+<!-- templates/invoice/proforma_form.html -->
+{% extends "invoice/base_invoice.html" %}
 {% load static %}
 
-{% block title %}Update Invoice #{{ object.invoice_number }}{% endblock %}
-
-{% block stylesheets %}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-<style>
-    .invoice-form-container {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        overflow: hidden;
-    }
-    
-    .invoice-header {
-        background: linear-gradient(135deg, #28a745, #20c997);
-        color: white;
-        padding: 30px;
-    }
-    
-    .section-card {
-        background: #f8f9fa;
-        border-radius: 12px;
-        padding: 25px;
-        margin-bottom: 25px;
-        border-left: 4px solid #28a745;
-    }
-    
-    .item-row {
-        background: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 15px;
-        border: 1px solid #e9ecef;
-        position: relative;
-    }
-    
-    .remove-item-btn {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: #dc3545;
-        border: none;
-        border-radius: 50%;
-        width: 35px;
-        height: 35px;
-        color: white;
-        cursor: pointer;
-    }
-    
-    .add-item-btn {
-        background: linear-gradient(135deg, #28a745, #20c997);
-        border: none;
-        border-radius: 50px;
-        padding: 15px 30px;
-        color: white;
-        font-weight: 600;
-        cursor: pointer;
-        margin: 20px auto;
-        display: block;
-    }
-</style>
-{% endblock %}
+{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Proforma Invoice{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="invoice-form-container">
-        <div class="invoice-header">
-            <h1><i class="fas fa-edit me-2"></i>Update Invoice #{{ object.invoice_number }}</h1>
-        </div>
-
-        <div class="p-4">
-            <form method="post" id="invoice-form">
-                {% csrf_token %}
-                
-                <!-- Customer Section -->
-                <div class="section-card">
-                    <h4><i class="fas fa-user me-2"></i>Customer Information</h4>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Customer</label>
-                                {{ form.customer_name }}
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Contact Number</label>
-                                {{ form.contact_number }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Items Section -->
-                <div class="section-card">
-                    <h4><i class="fas fa-shopping-cart me-2"></i>Items</h4>
-                    
-                    {{ formset.management_form }}
-                    <div id="items-container">
-                        {% for form in formset %}
-                        <div class="item-row">
-                            {% for hidden in form.hidden_fields %}
-                                {{ hidden }}
-                            {% endfor %}
-                            
-                            {% if form.instance.pk %}{{ form.DELETE }}{% endif %}
-                            
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label>Item</label>
-                                        {{ form.item }}
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Quantity</label>
-                                        {{ form.quantity }}
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label>Price</label>
-                                        {{ form.price_per_item }}
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Total</label>
-                                        <input type="text" class="form-control" 
-                                               value="{% if form.instance.pk %}{{ form.instance.total_price }}{% else %}0.00{% endif %}" 
-                                               readonly>
-                                    </div>
-                                </div>
-                                <div class="col-md-1">
-                                    <button type="button" class="remove-item-btn">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    <button type="button" id="add-item-btn" class="add-item-btn">
-                        <i class="fas fa-plus me-2"></i>Add Item
-                    </button>
-                </div>
-
-                <!-- Shipping -->
-                <div class="section-card">
-                    <h4><i class="fas fa-truck me-2"></i>Shipping</h4>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Shipping Cost</label>
-                                {{ form.shipping }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-success btn-lg">
-                        <i class="fas fa-save me-2"></i>Update Invoice
-                    </button>
-                    <a href="{% url 'invoice-detail' pk=object.pk %}" class="btn btn-secondary btn-lg">
-                        <i class="fas fa-times me-2"></i>Cancel
-                    </a>
-                </div>
-            </form>
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="invoice-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h2><i class="fas fa-file-invoice-dollar me-2"></i>
+                    {% if form.instance.pk %}Edit{% else %}Create{% endif %} Proforma Invoice
+                </h2>
+                <p class="mb-0">{% if form.instance.pk %}Update{% else %}Create new{% endif %} proforma invoice details</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <img src="{% static 'images/logo/logo.png' %}" alt="Business Logo" height="50" class="me-3">
+            </div>
         </div>
     </div>
+
+    <!-- Navigation -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'proforma_list' %}">Proforma Invoices</a></li>
+                    <li class="breadcrumb-item active">{% if form.instance.pk %}Edit{% else %}Create{% endif %}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <form method="post" id="proforma-form">
+        {% csrf_token %}
+        
+        <!-- Customer Search Section -->
+        <div class="card invoice-card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Customer Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Search Customer *</label>
+                            <input type="text" class="form-control customer-search" 
+                                   placeholder="Type to search customers..." 
+                                   data-url="{% url 'autocomplete_customers' %}">
+                            <div class="autocomplete-results" id="customer-results" style="display: none;"></div>
+                            {{ form.customer_name }}  <!-- Hidden field -->
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="id_contact_number" class="form-label">Contact Number *</label>
+                            {{ form.contact_number }}
+                            {% if form.contact_number.errors %}
+                            <div class="text-danger">{{ form.contact_number.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Selected Customer Info -->
+                <div class="selected-customer-info mt-3 p-3 bg-light rounded" style="display: none;">
+                    <h6>Selected Customer:</h6>
+                    <div id="customer-details">
+                        <p class="mb-1"><strong>Name:</strong> <span id="customer-name"></span></p>
+                        <p class="mb-1"><strong>Phone:</strong> <span id="customer-phone"></span></p>
+                        <p class="mb-1"><strong>Email:</strong> <span id="customer-email"></span></p>
+                        <p class="mb-0"><strong>Address:</strong> <span id="customer-address"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Items Section -->
+        <div class="card invoice-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Items</h5>
+                <button type="button" class="btn btn-sm btn-success" id="add-item">
+                    <i class="fas fa-plus me-1"></i> Add Item
+                </button>
+            </div>
+            <div class="card-body">
+                {{ formset.management_form }}
+                <div id="items-container">
+                    {% for form in formset %}
+                    <div class="item-row row mb-3 align-items-end">
+                        {% for hidden in form.hidden_fields %}
+                        {{ hidden }}
+                        {% endfor %}
+                        
+                        <div class="col-md-5">
+                            <label class="form-label">Search Item *</label>
+                            <input type="text" class="form-control item-search" 
+                                   placeholder="Type to search items..." 
+                                   data-url="{% url 'autocomplete_items' %}">
+                            <div class="autocomplete-results" style="display: none;"></div>
+                            {{ form.item }}  <!-- Hidden field -->
+                            
+                            <!-- Selected Item Info -->
+                            <div class="selected-item-info mt-2 p-2 bg-light rounded" style="display: none;">
+                                <small>
+                                    <span class="item-name fw-bold"></span>
+                                    <span class="item-stock text-muted"></span>
+                                    <span class="item-price text-success"></span>
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label class="form-label">Quantity *</label>
+                            {{ form.quantity }}
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label class="form-label">Price *</label>
+                            {{ form.price_per_item }}
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <label class="form-label">Total</label>
+                            <input type="text" class="form-control total-input" readonly 
+                                   value="Tsh 0.00">
+                        </div>
+                        
+                        <div class="col-md-1">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="button" class="btn btn-danger btn-sm remove-item w-100">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Totals Section -->
+        <div class="card invoice-card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Totals</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 offset-md-6">
+                        <div class="total-section">
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <strong>Subtotal:</strong>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <span id="subtotal">Tsh 0.00</span>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <label for="id_shipping" class="form-label"><strong>Shipping:</strong></label>
+                                </div>
+                                <div class="col-6">
+                                    {{ form.shipping }}
+                                </div>
+                            </div>
+                            <div class="row mt-3 pt-2 border-top">
+                                <div class="col-6">
+                                    <strong>Grand Total:</strong>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <span id="grand-total" class="h5 text-success">Tsh 0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden fields -->
+        {{ form.is_proforma }}
+        {{ form.status }}
+
+        <!-- Actions -->
+        <div class="row mb-4">
+            <div class="col-md-12 text-end">
+                <a href="{% url 'proforma_list' %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" name="save_draft" value="true" class="btn btn-outline-primary">
+                    Save Draft
+                </button>
+                <button type="submit" name="save_send" value="true" class="btn btn-primary">
+                    {% if form.instance.pk %}Update{% else %}Create{% endif %} & Send
+                </button>
+            </div>
+        </div>
+    </form>
 </div>
 {% endblock %}
 
 {% block javascripts %}
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+{{ block.super }}
 <script>
 $(document).ready(function() {
-    // Initialize select2
-    $('.item-select').select2();
+    // Customer search functionality
+    function setupCustomerSearch() {
+        const customerSearch = $('.customer-search');
+        const customerResults = $('#customer-results');
+        const customerIdField = $('#id_customer_name');
+        const contactField = $('#id_contact_number');
+        const customerInfo = $('.selected-customer-info');
+        
+        customerSearch.on('input', function() {
+            const query = $(this).val();
+            if (query.length < 2) {
+                customerResults.hide();
+                return;
+            }
+            
+            // Show loading
+            customerSearch.addClass('autocomplete-loading');
+            
+            $.get('{% url "autocomplete_customers" %}', {q: query}, function(data) {
+                customerSearch.removeClass('autocomplete-loading');
+                
+                if (data.results.length > 0) {
+                    customerResults.empty();
+                    data.results.forEach(function(customer) {
+                        customerResults.append(
+                            `<div class="autocomplete-item" data-customer-id="${customer.id}" 
+                                  data-first-name="${customer.first_name}" 
+                                  data-last-name="${customer.last_name}"
+                                  data-phone="${customer.phone}"
+                                  data-email="${customer.email}"
+                                  data-address="${customer.address}">
+                                ${customer.text}
+                            </div>`
+                        );
+                    });
+                    customerResults.show();
+                } else {
+                    customerResults.hide();
+                }
+            });
+        });
+        
+        // Handle customer selection
+        $(document).on('click', '.autocomplete-item', function() {
+            const customerId = $(this).data('customer-id');
+            const firstName = $(this).data('first-name');
+            const lastName = $(this).data('last-name');
+            const phone = $(this).data('phone');
+            const email = $(this).data('email');
+            const address = $(this).data('address');
+            
+            // Set the hidden field value
+            customerIdField.val(customerId);
+            
+            // Set contact number
+            contactField.val(phone);
+            
+            // Update customer info display
+            $('#customer-name').text(firstName + ' ' + lastName);
+            $('#customer-phone').text(phone);
+            $('#customer-email').text(email || 'N/A');
+            $('#customer-address').text(address || 'N/A');
+            customerInfo.show();
+            
+            // Hide results and clear search
+            customerResults.hide();
+            customerSearch.val('');
+        });
+        
+        // Hide results when clicking outside
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.customer-search, .autocomplete-results').length) {
+                customerResults.hide();
+            }
+        });
+    }
     
-    // Add item functionality
-    $('#add-item-btn').click(function() {
-        // This would need JavaScript to dynamically add new forms
-        alert('Add item functionality would be implemented here');
+    // Item search functionality
+    function setupItemSearch() {
+        $(document).on('input', '.item-search', function() {
+            const row = $(this).closest('.item-row');
+            const results = row.find('.autocomplete-results');
+            const query = $(this).val();
+            
+            if (query.length < 2) {
+                results.hide();
+                return;
+            }
+            
+            // Show loading
+            $(this).addClass('autocomplete-loading');
+            
+            $.get('{% url "autocomplete_items" %}', {q: query}, function(data) {
+                $(this).removeClass('autocomplete-loading');
+                
+                if (data.results.length > 0) {
+                    results.empty();
+                    data.results.forEach(function(item) {
+                        results.append(
+                            `<div class="autocomplete-item" data-item-id="${item.id}" 
+                                  data-name="${item.name}"
+                                  data-price="${item.price_per_item}"
+                                  data-quantity="${item.quantity}">
+                                ${item.text}
+                            </div>`
+                        );
+                    });
+                    results.show();
+                } else {
+                    results.hide();
+                }
+            }.bind(this));
+        });
+        
+        // Handle item selection
+        $(document).on('click', '.autocomplete-item', function() {
+            const row = $(this).closest('.item-row');
+            const itemId = $(this).data('item-id');
+            const itemName = $(this).data('name');
+            const itemPrice = $(this).data('price');
+            const itemQuantity = $(this).data('quantity');
+            
+            // Set the hidden field value
+            row.find('[name$="-item"]').val(itemId);
+            
+            // Set price automatically
+            row.find('.price-input').val(itemPrice);
+            
+            // Update item info display
+            const infoDiv = row.find('.selected-item-info');
+            infoDiv.find('.item-name').text(itemName);
+            infoDiv.find('.item-stock').text(' (' + itemQuantity + ' available)');
+            infoDiv.find('.item-price').text(' - Tsh ' + parseFloat(itemPrice).toFixed(2));
+            infoDiv.show();
+            
+            // Hide results and clear search
+            row.find('.autocomplete-results').hide();
+            row.find('.item-search').val('');
+            
+            // Calculate totals
+            calculateTotals();
+        });
+        
+        // Hide results when clicking outside
+        $(document).on('click', function(e) {
+            $('.autocomplete-results').each(function() {
+                if (!$(e.target).closest('.item-search, .autocomplete-results').length) {
+                    $(this).hide();
+                }
+            });
+        });
+    }
+    
+    // Auto-calculation functions
+    function calculateRowTotal(row) {
+        const quantity = parseFloat(row.find('.quantity-input').val()) || 0;
+        const price = parseFloat(row.find('.price-input').val()) || 0;
+        const total = quantity * price;
+        row.find('.total-input').val('Tsh ' + total.toFixed(2));
+        return total;
+    }
+    
+    function calculateTotals() {
+        let subtotal = 0;
+        $('.item-row').each(function() {
+            subtotal += calculateRowTotal($(this));
+        });
+        
+        const shipping = parseFloat($('#id_shipping').val()) || 0;
+        const grandTotal = subtotal + shipping;
+        
+        $('#subtotal').text('Tsh ' + subtotal.toFixed(2));
+        $('#grand-total').text('Tsh ' + grandTotal.toFixed(2));
+    }
+    
+    // Add new item row
+    $('#add-item').click(function() {
+        const formCount = $('#id_items-TOTAL_FORMS').val();
+        const newRow = $('.item-row:first').clone();
+        
+        newRow.find(':input').each(function() {
+            const name = $(this).attr('name').replace(/-\d+-/, `-${formCount}-`);
+            $(this).attr('name', name);
+            $(this).val('');
+        });
+        
+        newRow.find('.item-search').val('');
+        newRow.find('.selected-item-info').hide();
+        newRow.find('.total-input').val('Tsh 0.00');
+        $('#items-container').append(newRow);
+        $('#id_items-TOTAL_FORMS').val(parseInt(formCount) + 1);
     });
+    
+    // Remove item row
+    $(document).on('click', '.remove-item', function() {
+        if ($('.item-row').length > 1) {
+            $(this).closest('.item-row').remove();
+            $('#id_items-TOTAL_FORMS').val($('.item-row').length);
+            calculateTotals();
+        }
+    });
+    
+    // Calculate on quantity/price change
+    $(document).on('input', '.quantity-input, .price-input, #id_shipping', calculateTotals);
+    
+    // Form validation
+    $('#proforma-form').on('submit', function(e) {
+        let valid = true;
+        
+        // Check if customer is selected
+        if (!$('#id_customer_name').val()) {
+            alert('Please select a customer');
+            valid = false;
+        }
+        
+        // Check if at least one item is selected
+        let hasItems = false;
+        $('.item-row').each(function() {
+            if ($(this).find('[name$="-item"]').val()) {
+                hasItems = true;
+            }
+        });
+        
+        if (!hasItems) {
+            alert('Please add at least one item');
+            valid = false;
+        }
+        
+        if (!valid) {
+            e.preventDefault();
+        }
+    });
+    
+    // Initialize
+    setupCustomerSearch();
+    setupItemSearch();
+    calculateTotals();
 });
 </script>
+
+<style>
+.autocomplete-results {
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    width: 100%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.autocomplete-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+.autocomplete-item:hover {
+    background-color: #f8f9fa;
+}
+.autocomplete-loading {
+    background: url('{% static "images/loading.gif" %}') no-repeat right center;
+    background-size: 20px;
+}
+.selected-customer-info, .selected-item-info {
+    font-size: 0.9em;
+}
+</style>
 {% endblock %}

@@ -1,0 +1,652 @@
+{% extends "store/base.html" %}
+{% load static %}
+
+{% block title %}Create New Invoice{% endblock %}
+
+{% block stylesheets %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+    .invoice-create-container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .invoice-header {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 30px;
+    }
+    
+    .section-card {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        border-left: 4px solid #28a745;
+        transition: all 0.3s ease;
+    }
+    
+    .section-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .section-title {
+        color: #2c3e50;
+        border-bottom: 2px solid #28a745;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+    
+    .item-row {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        border: 1px solid #e9ecef;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+    
+    .item-row:hover {
+        border-color: #28a745;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.1);
+    }
+    
+    .remove-item-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: #dc3545;
+        border: none;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .remove-item-btn:hover {
+        transform: scale(1.1);
+        background: #c82333;
+    }
+    
+    .add-item-btn {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        border-radius: 50px;
+        padding: 15px 30px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 20px auto;
+    }
+    
+    .add-item-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+    
+    .calculation-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-top: 20px;
+    }
+    
+    .currency-input {
+        position: relative;
+    }
+    
+    .currency-input:before {
+        content: "Tsh";
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #f8f9fa;
+        padding: 0 8px;
+        font-weight: 600;
+        color: #495057;
+        z-index: 1;
+        border-radius: 4px 0 0 4px;
+    }
+    
+    .currency-input input {
+        padding-left: 60px;
+    }
+    
+    .item-total-display {
+        background: #e9ecef;
+        border-radius: 8px;
+        padding: 12px;
+        font-weight: 700;
+        color: #28a745;
+        text-align: center;
+        border: 2px solid #28a745;
+    }
+    
+    .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    
+    .select2-container--default .select2-selection--single {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        height: 46px;
+        padding: 8px;
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 44px;
+    }
+    
+    .customer-details {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+        border: 1px solid #28a745;
+        display: none;
+    }
+    
+    .customer-detail-item {
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+    }
+    
+    .btn-submit {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        border-radius: 50px;
+        padding: 15px 40px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+    }
+    
+    .alert-danger {
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+    }
+    
+    .alert-danger ul {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="invoice-create-container">
+        <!-- Header -->
+        <div class="invoice-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-1"><i class="fas fa-plus-circle me-2"></i>CREATE NEW INVOICE</h1>
+                    <p class="mb-0 opacity-75">Fill in the details below to create a new invoice</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <span class="badge bg-light text-dark fs-6">Draft</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Content -->
+        <div class="p-4">
+            <form method="post" id="invoice-form">
+                {% csrf_token %}
+                
+                <!-- Display form errors -->
+                {% if form.errors or formset.errors %}
+                <div class="alert alert-danger mb-4">
+                    <h5 class="mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Please fix the following errors:</h5>
+                    <ul class="mb-0">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ field|title }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for form in formset %}
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li>Item {{ forloop.parentloop.counter }} - {{ field|title }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- Customer Section -->
+                <div class="section-card">
+                    <h4 class="section-title"><i class="fas fa-user-circle me-2"></i>CUSTOMER INFORMATION</h4>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label">Select Customer *</label>
+                                {{ form.customer_name }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label class="form-label">Contact Number *</label>
+                                {{ form.contact_number }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Details Display -->
+                    <div id="customer-details" class="customer-details">
+                        <h6 class="text-success mb-3"><i class="fas fa-info-circle me-2"></i>CUSTOMER DETAILS</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="customer-detail-item">
+                                    <strong>Name:</strong> <span id="customer-fullname"></span>
+                                </div>
+                                <div class="customer-detail-item">
+                                    <strong>Phone:</strong> <span id="customer-phone"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="customer-detail-item">
+                                    <strong>Email:</strong> <span id="customer-email"></span>
+                                </div>
+                                <div class="customer-detail-item">
+                                    <strong>Address:</strong> <span id="customer-address"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items Section -->
+                <div class="section-card">
+                    <h4 class="section-title"><i class="fas fa-shopping-cart me-2"></i>ITEMS</h4>
+                    
+                    <div id="items-container">
+                        {{ formset.management_form }}
+                        
+                        {% for form in formset %}
+                        <div class="item-row" data-item-index="{{ forloop.counter0 }}">
+                            {% for hidden in form.hidden_fields %}
+                                {{ hidden }}
+                            {% endfor %}
+                            
+                            <button type="button" class="remove-item-btn" onclick="removeItemRow(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            
+                            <div class="row align-items-end">
+                                <div class="col-md-5">
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Select Product *</label>
+                                        <select class="form-control select2 item-select" 
+                                                name="{{ form.item.html_name }}" 
+                                                id="{{ form.item.id_for_label }}">
+                                            <option value="">Select a product...</option>
+                                            {% for item in items %}
+                                                <option value="{{ item.id }}" data-price="{{ item.price }}" 
+                                                    {% if form.item.value == item.id %}selected{% endif %}>
+                                                    {{ item.name }} - Tsh {{ item.price|floatformat:2 }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Quantity *</label>
+                                        {{ form.quantity }}
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Unit Price (Tsh) *</label>
+                                        <div class="currency-input">
+                                            {{ form.price_per_item }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Total</label>
+                                        <div class="item-total-display">
+                                            Tsh <span class="item-total-amount">0.00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Add Item Button -->
+                    <div class="text-center">
+                        <button type="button" id="add-item-btn" class="add-item-btn">
+                            <i class="fas fa-plus me-2"></i>ADD ANOTHER ITEM
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Shipping & Totals Section -->
+                <div class="section-card">
+                    <h4 class="section-title"><i class="fas fa-truck me-2"></i>SHIPPING & TOTALS</h4>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label class="form-label">Shipping Cost (Tsh)</label>
+                                <div class="currency-input">
+                                    {{ form.shipping }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="calculation-box">
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <span class="total-label">Subtotal:</span>
+                                    </div>
+                                    <div class="col-6 text-end">
+                                        <span class="total-value">Tsh <span id="subtotal-amount">0.00</span></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <span class="total-label">Shipping:</span>
+                                    </div>
+                                    <div class="col-6 text-end">
+                                        <span class="total-value">Tsh <span id="shipping-amount">0.00</span></span>
+                                    </div>
+                                </div>
+                                
+                                <hr style="border-color: rgba(255,255,255,0.3);">
+                                
+                                <div class="row">
+                                    <div class="col-6">
+                                        <span class="total-label">Grand Total:</span>
+                                    </div>
+                                    <div class="col-6 text-end">
+                                        <span class="total-value" style="font-size: 1.3rem;">Tsh <span id="grand-total-amount">0.00</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-submit me-3">
+                            <i class="fas fa-save me-2"></i>CREATE INVOICE
+                        </button>
+                        <a href="{% url 'invoicelist' %}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times me-2"></i>CANCEL
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+let itemCount = {{ formset.total_form_count }};
+const totalFormsInput = $('#id_items-TOTAL_FORMS');
+
+$(document).ready(function() {
+    console.log('Invoice creation form initialized');
+    
+    // Initialize select2
+    $('#id_customer_name').select2({
+        width: '100%',
+        placeholder: 'Search for a customer...',
+        theme: 'bootstrap-5'
+    });
+
+    $('.item-select').select2({
+        width: '100%',
+        placeholder: 'Search for a product...',
+        theme: 'bootstrap-5'
+    });
+
+    // Auto-fill price when item is selected
+    $('.item-select').on('change', function() {
+        const selectedOption = $(this).find('option:selected');
+        const price = parseFloat(selectedOption.data('price')) || 0;
+        const row = $(this).closest('.item-row');
+        
+        if (price > 0) {
+            const priceInput = row.find('.price-input');
+            // Only set price if it's currently 0 or empty
+            if (parseFloat(priceInput.val()) === 0 || priceInput.val() === '') {
+                priceInput.val(price.toFixed(2));
+                calculateItemTotal(priceInput[0]);
+            }
+        }
+    });
+
+    // Customer selection change
+    $('#id_customer_name').on('change', function() {
+        const customerId = $(this).val();
+        if (customerId) {
+            // Simulate customer data fetch (you'd replace this with actual API call)
+            simulateCustomerDataFetch(customerId);
+        } else {
+            $('#customer-details').hide();
+        }
+    });
+
+    // Add new item row
+    $('#add-item-btn').click(function() {
+        const newIndex = itemCount++;
+        totalFormsInput.val(itemCount);
+        
+        const newRow = createItemRow(newIndex);
+        $('#items-container').append(newRow);
+        
+        // Initialize select2 for new row
+        newRow.find('.item-select').select2({
+            width: '100%',
+            placeholder: 'Search for a product...',
+            theme: 'bootstrap-5'
+        }).on('change', function() {
+            const selectedOption = $(this).find('option:selected');
+            const price = parseFloat(selectedOption.data('price')) || 0;
+            const row = $(this).closest('.item-row');
+            
+            if (price > 0) {
+                const priceInput = row.find('.price-input');
+                if (parseFloat(priceInput.val()) === 0) {
+                    priceInput.val(price.toFixed(2));
+                    calculateItemTotal(priceInput[0]);
+                }
+            }
+        });
+    });
+
+    // Calculate initial totals
+    $('.quantity-input, .price-input').each(function() {
+        calculateItemTotal(this);
+    });
+    calculateTotals();
+});
+
+function createItemRow(index) {
+    return $(`
+        <div class="item-row" data-item-index="${index}">
+            <button type="button" class="remove-item-btn" onclick="removeItemRow(this)">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <input type="hidden" name="items-${index}-id" id="id_items-${index}-id">
+            <input type="hidden" name="items-${index}-invoice" id="id_items-${index}-invoice">
+            
+            <div class="row align-items-end">
+                <div class="col-md-5">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Select Product *</label>
+                        <select class="form-control select2 item-select" 
+                                name="items-${index}-item" 
+                                id="id_items-${index}-item">
+                            <option value="">Select a product...</option>
+                            {% for item in items %}
+                                <option value="{{ item.id }}" data-price="{{ item.price }}">
+                                    {{ item.name }} - Tsh {{ item.price|floatformat:2 }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Quantity *</label>
+                        <input type="number" name="items-${index}-quantity"
+                               id="id_items-${index}-quantity"
+                               class="form-control quantity-input" 
+                               step="0.01" value="1" min="0.01"
+                               oninput="calculateItemTotal(this)">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Unit Price (Tsh) *</label>
+                        <div class="currency-input">
+                            <input type="number" name="items-${index}-price_per_item"
+                                   id="id_items-${index}-price_per_item"
+                                   class="form-control price-input" 
+                                   step="0.01" value="0" min="0"
+                                   oninput="calculateItemTotal(this)">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Total</label>
+                        <div class="item-total-display">
+                            Tsh <span class="item-total-amount">0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <input type="hidden" name="items-${index}-DELETE" id="id_items-${index}-DELETE" value="">
+        </div>
+    `);
+}
+
+function removeItemRow(button) {
+    const row = $(button).closest('.item-row');
+    const deleteInput = row.find('input[id$="-DELETE"]');
+    
+    if (deleteInput.length) {
+        deleteInput.val('on');
+        row.hide();
+    } else if ($('.item-row:visible').length > 1) {
+        row.remove();
+        itemCount--;
+        totalFormsInput.val(itemCount);
+    } else {
+        alert('You must have at least one item.');
+    }
+    
+    calculateTotals();
+}
+
+function calculateItemTotal(inputElement) {
+    const row = $(inputElement).closest('.item-row');
+    const quantity = parseFloat(row.find('.quantity-input').val()) || 0;
+    const price = parseFloat(row.find('.price-input').val()) || 0;
+    const total = quantity * price;
+    
+    row.find('.item-total-amount').text(total.toFixed(2));
+    calculateTotals();
+}
+
+function calculateTotals() {
+    let subtotal = 0;
+    
+    $('.item-row:visible').each(function() {
+        const totalText = $(this).find('.item-total-amount').text();
+        const total = parseFloat(totalText) || 0;
+        subtotal += total;
+    });
+    
+    const shipping = parseFloat($('#id_shipping').val()) || 0;
+    const grandTotal = subtotal + shipping;
+    
+    $('#subtotal-amount').text(subtotal.toFixed(2));
+    $('#shipping-amount').text(shipping.toFixed(2));
+    $('#grand-total-amount').text(grandTotal.toFixed(2));
+}
+
+function simulateCustomerDataFetch(customerId) {
+    // This is a simulation - replace with actual API call
+    const customerData = {
+        '1': { name: 'John Doe', phone: '+255 123 456 789', email: 'john@example.com', address: '123 Main St' },
+        '2': { name: 'Jane Smith', phone: '+255 987 654 321', email: 'jane@example.com', address: '456 Oak Ave' }
+    };
+    
+    const customer = customerData[customerId] || {};
+    
+    $('#customer-fullname').text(customer.name || 'N/A');
+    $('#customer-phone').text(customer.phone || 'N/A');
+    $('#customer-email').text(customer.email || 'N/A');
+    $('#customer-address').text(customer.address || 'N/A');
+    $('#customer-details').show();
+}
+
+// Form validation
+$('#invoice-form').on('submit', function(e) {
+    let hasItems = false;
+    $('.item-select:visible').each(function() {
+        if ($(this).val()) {
+            hasItems = true;
+            return false;
+        }
+    });
+    
+    if (!hasItems) {
+        e.preventDefault();
+        alert('Please add at least one item to the invoice.');
+        return false;
+    }
+});
+</script>
+{% endblock %}

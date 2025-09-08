@@ -95,6 +95,7 @@ WSGI_APPLICATION = 'InventoryMS.wsgi.application'
         'PASSWORD':'Simwimba@3008'
     }
 }"""
+
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///db.sqlite3',  # Fallback for local development
@@ -102,6 +103,8 @@ DATABASES = {
         conn_health_checks=True,
     )
 }
+
+
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 

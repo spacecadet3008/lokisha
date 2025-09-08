@@ -30,7 +30,32 @@
   --sidebar-item-height: 50px;
   --submenu-item-height: 45px;
 }
-
+/* auto-complete*/
+.autocomplete-results {
+  position: absolute;
+  background: white;
+  border: 1px solid #ddd;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  width: 100%;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.autocomplete-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+.autocomplete-item:hover {
+  background-color: #f8f9fa;
+}
+.autocomplete-loading {
+  background: url('/static/images/loading.gif') no-repeat right center;
+  background-size: 20px;
+}
+.selected-customer-info, .selected-item-info {
+  font-size: 0.9em;
+}
 /* General styles */
 * {
   margin: 0;

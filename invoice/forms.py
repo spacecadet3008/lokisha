@@ -1,20 +1,26 @@
 from django import forms
-from .models import Invoice,InvoiceItem
+from .models import Invoice,InvoiceItem,Delivery,DeliveryItem
 from store.models import Item
 from accounts.models import Customer
-
-# forms.py
 from django.forms import inlineformset_factory
 
+
 class InvoiceForm(forms.ModelForm):
+    customer_search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control customer-search',
+            'placeholder': 'Search for customer...',
+            'autocomplete': 'off'
+        }),
+        label='Search Customer'
+    )
+    
     class Meta:
         model = Invoice
-        fields = ['customer_name', 'contact_number', 'shipping']
+        fields = ['customer_name', 'contact_number', 'shipping', 'is_proforma', 'status']
         widgets = {
-            'customer_name': forms.Select(attrs={
-                'class': 'form-control select2',
-                'style': 'width: 100%'
-            }),
+            'customer_name': forms.HiddenInput(),  # Hidden field for the actual selection
             'contact_number': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Contact number...'
@@ -24,15 +30,36 @@ class InvoiceForm(forms.ModelForm):
                 'step': '0.01',
                 'min': '0'
             }),
+            'is_proforma': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-control'
+            }),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make customer_name not required initially since we'll set it via search
+        self.fields['customer_name'].required = False
 
 
 class InvoiceItemForm(forms.ModelForm):
+    item_search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control item-search',
+            'placeholder': 'Search for item...',
+            'autocomplete': 'off'
+        }),
+        label='Search Item'
+    )
+    
     class Meta:
         model = InvoiceItem
         fields = ['item', 'quantity', 'price_per_item']
         widgets = {
-            'item': forms.HiddenInput(),
+            'item': forms.HiddenInput(),  # Hidden field for the actual selection
             'quantity': forms.NumberInput(attrs={
                 'class': 'form-control quantity-input',
                 'step': '0.01',
@@ -47,6 +74,8 @@ class InvoiceItemForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Make item not required initially since we'll set it via search
+        self.fields['item'].required = False
         # Make price_per_item not required initially since we'll set it automatically
         self.fields['price_per_item'].required = False
 
@@ -83,77 +112,71 @@ InvoiceItemFormSet = inlineformset_factory(
     can_delete_extra=True
 )
 
-"""class InvoiceForm(forms.ModelForm):
-    # Add these fields to handle the autocomplete inputs
-    customer_search = forms.CharField(required=False, widget=forms.HiddenInput())
-    item_search = forms.CharField(required=False, widget=forms.HiddenInput())
-    customer_id = forms.CharField(required=False, widget=forms.HiddenInput())
-    item_id = forms.CharField(required=False, widget=forms.HiddenInput())
-
+class DeliveryForm(forms.ModelForm):
+    customer_search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control customer-search',
+            'placeholder': 'Search for customer...',
+            'autocomplete': 'off'
+        }),
+        label='Search Customer'
+    )
     
     class Meta:
-        model = Invoice
-        fields = [
-            'customer_name', 'contact_number', 'item',
-            'price_per_item', 'quantity', 'shipping'
-        ]
+        model = Delivery
+        fields = ['customer_name', 'contact_number', 'shipping_address', 'notes', 'status']
         widgets = {
             'customer_name': forms.HiddenInput(),
-            'item': forms.HiddenInput(),
             'contact_number': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Contact number...'
             }),
-            'price_per_item': forms.NumberInput(attrs={
+            'shipping_address': forms.Textarea(attrs={
                 'class': 'form-control',
-                'step': '0.01',
-                  # Make it readonly since it's auto-populated
+                'rows': 3,
+                'placeholder': 'Enter delivery address...'
             }),
-            'quantity': forms.NumberInput(attrs={
+            'notes': forms.Textarea(attrs={
                 'class': 'form-control',
-                'step': '0.01'
+                'rows': 2,
+                'placeholder': 'Additional delivery notes...'
             }),
-            'shipping': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01'
+            'status': forms.Select(attrs={
+                'class': 'form-control'
             }),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['customer_name'].required = False
+        
+        # Pre-populate customer search if instance exists
+        if self.instance and self.instance.pk and self.instance.customer_name:
+            customer = self.instance.customer_name
+            self.fields['customer_search'].initial = f"{customer.first_name} {customer.last_name}"
 
-        def clean(self):
-            cleaned_data = super().clean()
+class DeliveryItemForm(forms.ModelForm):
+    item_search = forms.CharField(required=False, widget=forms.TextInput(attrs={
+        'class': 'form-control item-search', 'placeholder': 'Search for item...'
+    }))
+    
+    class Meta:
+        model = DeliveryItem
+        fields = ['item', 'quantity', 'price_per_item']
+        widgets = {
+            'item': forms.HiddenInput(),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '0.01', 'step': '0.01'}),
+            'price_per_item': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01'}),
+        }
 
-            #get ids from hidden fields
-            customer_id = cleaned_data.get('customer_id')
-            item_id = cleaned_data.get('item_id')
 
-            # convert to actual objects
-            if customer_id:
-                try:
-                    cleaned_data['customer_name'] = Customer.objects.get(id=customer_id)
-                except Customer.DoesNotExist:
-                    self.add_error['customer_id','selected customer dies not exist']
-            if item_id:
-                try:
-                    item = Item.objects.get(id=int(item_id))
-                    cleaned_data['item'] = item
-
-                    if not cleaned_data.get('price_per_item'):
-                        cleaned_data['price_per_item' ] = Item.price
-                except (Item.DoesNotExist, ValueError, TypeError):
-                    raise forms.ValidationError('selected item is invalid')
-            return cleaned_data
-
-            def save(self,commit= True):
-                instance = super().save(commit=False)
-
-                #set foreignkey from cleaned data
-
-                if 'customer_name' in self.cleaned_data:
-                    instance.customer_name - self.cleaned_data['customer']
-
-                if 'item' in self.cleaned_data:
-                    instance.item = self.cleaned_data['item']
-                
-                if commit:
-                    instance.save()
-                return instance"""
+# Formset for delivery items
+DeliveryItemFormSet = inlineformset_factory(
+    Delivery,
+    DeliveryItem,
+    form=DeliveryItemForm,
+    extra=1,
+    can_delete=True,
+    can_delete_extra=True
+)
