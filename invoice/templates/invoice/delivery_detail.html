@@ -90,13 +90,7 @@
                             {{ delivery.status|title }}
                         </span>
                     </p>
-                    {% if delivery.converted_to_invoice %}
-                    <p class="mb-0"><strong>Converted to Invoice:</strong> 
-                        <a href="{% url 'invoice_detail' delivery.converted_to_invoice.pk %}" class="text-success">
-                            #{{ delivery.converted_to_invoice.invoice_number }}
-                        </a>
-                    </p>
-                    {% endif %}
+<!-- place to convert delivery to invoice-->
                 </div>
             </div>
         </div>

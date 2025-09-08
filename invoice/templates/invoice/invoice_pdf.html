@@ -1,0 +1,180 @@
+<!-- templates/invoice/invoice_pdf.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if invoice.is_proforma %}Proforma{% else %}Invoice{% endif %} #{{ invoice.invoice_number }}</title>
+    <style>
+        body {
+            font-family: "Helvetica", Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .header {
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .company-info {
+            float: left;
+            width: 50%;
+        }
+        .invoice-info {
+            float: right;
+            width: 45%;
+            text-align: right;
+        }
+        .clear {
+            clear: both;
+        }
+        .section {
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 11px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: left;
+        }
+        th {
+            background-color: #28a745;
+            color: white;
+            font-weight: bold;
+        }
+        .total-section {
+            background-color: #f8f9fa;
+            padding: 12px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .status-draft { background-color: #6c757d; color: white; }
+        .status-sent { background-color: #17a2b8; color: white; }
+        .status-paid { background-color: #28a745; color: white; }
+        .status-cancelled { background-color: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-info">
+            <h2 style="color: #28a745; margin: 0 0 10px 0;">LOKISHA ENTERPRISE</h2>
+            <p style="margin: 2px 0;">P.O. Box 295, Arusha</p>
+            <p style="margin: 2px 0;">Phone: +255 123 456 789</p>
+            <p style="margin: 2px 0;">Email: info@lokisha.co.tz</p>
+        </div>
+        
+        <div class="invoice-info">
+            <h3 style="margin: 0 0 10px 0;">
+                <span style="background-color: {% if invoice.is_proforma %}#17a2b8{% else %}#28a745{% endif %}; 
+                      color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">
+                    {% if invoice.is_proforma %}PROFORMA INVOICE{% else %}INVOICE{% endif %}
+                </span>
+            </h3>
+            <p style="margin: 3px 0;"><strong>Number:</strong> {{ invoice.invoice_number }}</p>
+            <p style="margin: 3px 0;"><strong>Date:</strong> {{ invoice.date|date:"M d, Y" }}</p>
+            <p style="margin: 3px 0;">
+                <strong>Status:</strong> 
+                <span class="status-{{ invoice.status }} status-badge">
+                    {{ invoice.status|title }}
+                </span>
+            </p>
+        </div>
+        <div class="clear"></div>
+    </div>
+
+    <div class="section">
+        <div style="width: 48%; float: left;">
+            <h4 style="margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">Bill To:</h4>
+            <p style="margin: 5px 0;"><strong>{{ invoice.customer_name.first_name }} {{ invoice.customer_name.last_name }}</strong></p>
+            <p style="margin: 5px 0;">Phone: {{ invoice.contact_number }}</p>
+            {% if invoice.customer_name.email %}
+            <p style="margin: 5px 0;">Email: {{ invoice.customer_name.email }}</p>
+            {% endif %}
+            {% if invoice.customer_name.address %}
+            <p style="margin: 5px 0;">Address: {{ invoice.customer_name.address }}</p>
+            {% endif %}
+        </div>
+        
+        <div style="width: 48%; float: right;">
+            <h4 style="margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">From:</h4>
+            <p style="margin: 5px 0;"><strong>LOKISHA ENTERPRISE</strong></p>
+            <p style="margin: 5px 0;">P.O. Box 295, Arusha</p>
+            <p style="margin: 5px 0;">Phone: +255 123 456 789</p>
+            <p style="margin: 5px 0;">Email: info@lokisha.co.tz</p>
+        </div>
+        <div class="clear"></div>
+    </div>
+
+    <div class="section">
+        <h4 style="margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">Items</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                    <th>Unit Price (Tsh)</th>
+                    <th>Total (Tsh)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice.items.all %}
+                <tr>
+                    <td>{{ item.item.name }}</td>
+                    <td style="text-align: center;">{{ item.quantity|floatformat:2 }}</td>
+                    <td style="text-align: right;">{{ item.price_per_item|floatformat:2 }}</td>
+                    <td style="text-align: right;">{{ item.total_price|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="total-section">
+        <table style="width: 50%; margin-left: auto; border: none;">
+            <tr>
+                <td style="border: none; text-align: right; padding: 3px;"><strong>Subtotal:</strong></td>
+                <td style="border: none; text-align: right; padding: 3px;">Tsh {{ invoice.total|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td style="border: none; text-align: right; padding: 3px;"><strong>Shipping:</strong></td>
+                <td style="border: none; text-align: right; padding: 3px;">Tsh {{ invoice.shipping|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td style="border: none; text-align: right; padding: 3px; border-top: 1px solid #ddd;"><strong>Grand Total:</strong></td>
+                <td style="border: none; text-align: right; padding: 3px; border-top: 1px solid #ddd;">
+                    <strong>Tsh {{ invoice.grand_total|floatformat:2 }}</strong>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>Thank you for your business! | Phone: +255 123 456 789 | Email: info@lokisha.co.tz</p>
+        <p>Generated on: {% now "M d, Y H:i" %}</p>
+    </div>
+</body>
+</html>

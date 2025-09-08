@@ -1,0 +1,9 @@
+<!--
+    {% if delivery.converted_to_invoice %}
+    <p class="mb-0"><strong>Converted to Invoice:</strong> 
+        <a href="{% url 'invoice_detail' delivery.invoice.pk %}" class="text-success">
+            #{{ delivery.converted_to_invoice.invoice_number }}
+        </a>
+    </p>
+    {% endif %}
+    -->

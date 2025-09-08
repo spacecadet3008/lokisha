@@ -153,9 +153,9 @@ class InvoiceDetailView(LoginRequiredMixin, DetailView):
     pk_url_kwarg = 'pk'
 
     def get_template_names(self):
-        # Use different templates for proforma vs regular invoices
-        if self.object.is_proforma:
-            return ['invoice/invoicedetail.html']
+        # Use print template if print parameter is present
+        if self.request.GET.get('print') == 'true':
+            return ['invoice/invoice_print.html']
         return ['invoice/invoicedetail.html']
     
     def get_queryset(self):
@@ -446,7 +446,13 @@ class DeliveryDetailView(LoginRequiredMixin, DetailView):
     model = Delivery
     template_name = 'invoice/delivery_detail.html'
     context_object_name = 'delivery'
-    
+
+    def get_template_names(self):
+        # Use print template if print parameter is present
+        if self.request.GET.get('print') == 'true':
+            return ['invoice/delivery_print.html']
+        return ['invoice/delivery_detail.html']
+
 
 class DeliveryUpdateView(LoginRequiredMixin, UpdateView):
     model = Delivery
@@ -492,3 +498,31 @@ class DeliveryConvertView(LoginRequiredMixin, View):
         messages.success(request, f'Delivery converted to invoice #{invoice.invoice_number}')
         
         return redirect('invoice_detail', pk=invoice.pk)
+
+from .utils import generate_pdf_response
+
+def generate_invoice_pdf(request, pk):
+    """Generate PDF for invoice or proforma"""
+    invoice = get_object_or_404(Invoice, pk=pk)
+    
+    context = {
+        'invoice': invoice,
+    }
+    
+    filename = f"{'proforma' if invoice.is_proforma else 'invoice'}_{invoice.invoice_number}.pdf"
+    return generate_pdf_response('invoice/invoice_pdf.html', context, filename)
+
+def generate_delivery_pdf(request, pk):
+    """Generate PDF for delivery"""
+    delivery = get_object_or_404(Delivery, pk=pk)
+    
+    # Calculate total
+    delivery_total = sum(item.total_price for item in delivery.items.all())
+    
+    context = {
+        'delivery': delivery,
+        'delivery_total': delivery_total,
+    }
+    
+    filename = f"delivery_{delivery.delivery_number}.pdf"
+    return generate_pdf_response('invoice/delivery_pdf.html', context, filename)

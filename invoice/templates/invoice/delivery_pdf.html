@@ -1,0 +1,178 @@
+<!-- templates/invoice/delivery_pdf.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Delivery #{{ delivery.delivery_number }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            font-size: 12px;
+        }
+        .header {
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .company-info {
+            float: left;
+            width: 50%;
+        }
+        .delivery-info {
+            float: right;
+            width: 45%;
+            text-align: right;
+        }
+        .clear {
+            clear: both;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #28a745;
+            color: white;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .bg-primary { background-color: #007bff; color: white; }
+        .bg-success { background-color: #28a745; color: white; }
+        .bg-secondary { background-color: #6c757d; color: white; }
+        .bg-warning { background-color: #ffc107; color: black; }
+        .bg-info { background-color: #17a2b8; color: white; }
+        .bg-danger { background-color: #dc3545; color: white; }
+        .signature-area {
+            margin-top: 40px;
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            width: 200px;
+            margin: 40px 0 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-info">
+            <h2 class="text-success">LOKISHA ENTERPRISE</h2>
+            <p>P.O. Box 295, Arusha</p>
+            <p>Phone: +255 123 456 789</p>
+            <p>Email: info@lokisha.co.tz</p>
+        </div>
+        
+        <div class="delivery-info">
+            <h3>
+                <span class="badge bg-primary">DELIVERY NOTE</span>
+            </h3>
+            <p><strong>Number:</strong> {{ delivery.delivery_number }}</p>
+            <p><strong>Date:</strong> {{ delivery.date|date:"M d, Y" }}</p>
+            <p>
+                <strong>Status:</strong> 
+                <span class="badge 
+                    {% if delivery.status == 'draft' %}bg-secondary
+                    {% elif delivery.status == 'preparing' %}bg-warning
+                    {% elif delivery.status == 'dispatched' %}bg-info
+                    {% elif delivery.status == 'delivered' %}bg-success
+                    {% else %}bg-danger{% endif %}">
+                    {{ delivery.status|title }}
+                </span>
+            </p>
+        </div>
+        <div class="clear"></div>
+    </div>
+
+    <div class="section">
+        <div style="width: 48%; float: left;">
+            <h4>Customer Information:</h4>
+            <p><strong>{{ delivery.customer_name.first_name }} {{ delivery.customer_name.last_name }}</strong></p>
+            <p>Phone: {{ delivery.contact_number }}</p>
+            {% if delivery.customer_name.email %}
+            <p>Email: {{ delivery.customer_name.email }}</p>
+            {% endif %}
+        </div>
+        
+        <div style="width: 48%; float: right;">
+            <h4>Delivery Address:</h4>
+            <p>{{ delivery.shipping_address|linebreaksbr }}</p>
+        </div>
+        <div class="clear"></div>
+    </div>
+
+    <div class="section">
+        <h4>Delivery Items</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                    <th>Unit Price (Tsh)</th>
+                    <th>Total (Tsh)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in delivery.items.all %}
+                <tr>
+                    <td>{{ item.item.name }}</td>
+                    <td>{{ item.quantity|floatformat:2 }}</td>
+                    <td>{{ item.price_per_item|floatformat:2 }}</td>
+                    <td>{{ item.total_price|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" style="text-align: right; font-weight: bold;">Total Value:</td>
+                    <td style="font-weight: bold;">Tsh {{ delivery_total|floatformat:2 }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    {% if delivery.notes %}
+    <div class="section">
+        <h4>Delivery Notes:</h4>
+        <p>{{ delivery.notes|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+    <div class="signature-area">
+        <div style="width: 45%; float: left; text-align: center;">
+            <div class="signature-line"></div>
+            <p>Customer Signature</p>
+        </div>
+        
+        <div style="width: 45%; float: right; text-align: center;">
+            <div class="signature-line"></div>
+            <p>Driver Signature</p>
+        </div>
+        <div class="clear"></div>
+    </div>
+
+    <div class="footer">
+        <p>Thank you for your business! | Phone: +255 123 456 789 | Email: info@lokisha.co.tz</p>
+        <p>Generated on: {% now "M d, Y H:i" %}</p>
+    </div>
+</body>
+</html>

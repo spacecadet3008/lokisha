@@ -13,6 +13,8 @@ from .views import (
     InvoiceDeleteView, 
     InvoiceListView,
     ProformaConvertView,
+    generate_invoice_pdf, 
+    generate_delivery_pdf,
     autocomplete_customers, 
     autocomplete_items,
     DeliveryListView,
@@ -50,6 +52,12 @@ urlpatterns = [
     # Autocomplete
     path('autocomplete/customers/', autocomplete_customers, name='autocomplete_customers'),
     path('autocomplete/items/', autocomplete_items, name='autocomplete_items'),
+
+
+    # pdf convertor 
+    path('invoice/<int:pk>/pdf/', generate_invoice_pdf, name='invoice_pdf'),
+    path('proforma/<int:pk>/pdf/', generate_invoice_pdf, name='proforma_pdf'),
+    path('delivery/<int:pk>/pdf/', generate_delivery_pdf, name='delivery_pdf'),
 ]
 
 # Static media files configuration for development
