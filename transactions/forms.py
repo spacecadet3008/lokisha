@@ -42,3 +42,4 @@ class PurchaseForm(BootstrapMixin, forms.ModelForm):
                 attrs={'class': 'form-control'}
             ),
         }
+

@@ -114,27 +114,14 @@
             </li>
             <li class="nav-item mb-2 dropdown">
                 <a class="nav-link text-light {% if request.resolver_match.url_name == 'profile_list' or request.resolver_match.url_name == 'customer_list' or request.resolver_match.url_name == 'vendor-list' %} active{% endif %} dropdown-toggle" href="#" id="accountsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fa-solid fa-receipt me-2"></i> Invoices
+                    <i class="fas fa-truck"></i> Invoices
                 </a>
-                <ul class="dropdown-menu bg-dark border-0" aria-labelledby="accountsDropdown">
-                    <li class="nav-item mb-2">
-                        <a class="nav-link text-light {% if request.resolver_match.url_name == 'invoicelist' %}active{% endif %}" href="{% url 'invoicelist' %}">
-                            <i class="fa-solid fa-receipt me-2"></i> Invoices
-                        </a>
-                    </li>
-                    <li class="nav-item-mb-2">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'proforma_list' %}active{% endif %}" href="{% url 'proforma_list' %}">
-                            <i class="fas fa-file-invoice-dollar"></i> Proforma Invoices
-                        </a>
-                    </li>
-                    <li class="nav-item-mb-2">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'delivery_list' %}active{% endif %}" href="{% url 'delivery_list' %}">
-                            <i class="fas fa-truck"></i> Deliveries
-                        </a>
-                    </li>
+                <ul class="dropdown-menu bg-dark border-0" aria-labelledby="innoiveDropdown">
+                    <li><a class="dropdown-item text-light {% if request.resolver_match.url_name == 'invoicelist' %}active{% endif %}" href="{% url 'invoicelist' %}">Invoices</a></li>
+                    <li><a class="dropdown-item text-light {% if request.resolver_match.url_name == 'proforma_list' %}active{% endif %}" href="{% url 'proforma_list' %}">Proforma</a></li>
+                    <li><a class="dropdown-item text-light {% if request.resolver_match.url_name == 'delivery_list' %}active{% endif %}" href="{% url 'delivery_list' %}">Delivery</a></li>
                 </ul>
-            </li>
-            <li class="nav-item mb-2">
+            <li>
                 <a class="nav-link text-light {% if request.resolver_match.url_name == 'bill_list' %}active{% endif %}" href="{% url 'bill_list' %}">
                     <i class="fa-solid fa-file-invoice me-2"></i> Bills
                 </a>

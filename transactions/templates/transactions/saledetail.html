@@ -316,13 +316,13 @@
 <section class="receipt container-ticket">
     <div class="ticket">
         <div class="head-ticket">
-            <p class="x-bold">InventoryMS</p>
-            <p class="bold">Tom Mboya Street, Tudor</p>
-            <p class="bold">Tel: +2547 00 000000</p>
+            <p class="x-bold">Lokisha General Supplies</p>
+            <p class="bold">Arusha , Mihanzini</p>
+            <p class="bold">Tel: +255 654 905 800</p>
             <br>
-            <p class="bold">P.O BOX. 90420-80100 MSA</p>
+            <p class="bold">P.O BOX. 90420-80100 ARS</p>
             <p>Date: {{ sale.date_added|date:"Y/m/d H:i:s" }}</p>
-            <p>Receipt code: IMS{{ sale.id }}</p>
+            <p>Receipt code: LGS{{ sale.id }}</p>
             <div class="code-barre">
 				<span></span>
 				<span></span>
@@ -381,29 +381,29 @@
                 <div class="hr-sm"></div>
                 <div class="col2">
                     <p>Sub Total</p>
-                    <p class="prix"><b>Ksh {{ sale.sub_total }}</b></p>
+                    <p class="prix"><b>Tsh {{ sale.sub_total }}</b></p>
                 </div>
                 <br>
                 <div class="col2">
                     <p>Tax Amount</p>
-                    <p class="prix"><b>Ksh {{ sale.tax_amount }}</b></p>
+                    <p class="prix"><b>Tsh {{ sale.tax_amount }}</b></p>
                 </div>
                 <div class="col2">
                     <p>Grand Total</p>
-                    <p class="prix"><b>Ksh {{ sale.grand_total }}</b></p>
+                    <p class="prix"><b>Tsh {{ sale.grand_total }}</b></p>
                 </div>
                 <div class="col2">
                     <p>Amount Paid</p>
-                    <p class="prix"><b>Ksh {{ sale.amount_paid }}</b></p>
+                    <p class="prix"><b>Tsh {{ sale.amount_paid }}</b></p>
                 </div>
                 <div class="col2">
                     <p>Balance</p>
-                    <p class="prix"><b>Ksh {{ sale.amount_change }}</b></p>
+                    <p class="prix"><b>Tsh {{ sale.amount_change }}</b></p>
                 </div>
             </div>
             <div class="hr-lg"></div>
             <div class="carte">
-                <p class="title-carte">Customer: {{ sale.customer.first_name }}</p>
+                <p class="title-carte">Customer: {{ sale.customer.first_name }} {{sale.customer.last_name}}</p>
             </div>
             <div class="hr-lg"></div>
         </div>

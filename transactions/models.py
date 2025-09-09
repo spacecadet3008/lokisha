@@ -40,7 +40,7 @@ class Sale(models.Model):
     amount_paid = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=0.0
+        default=18
     )
     amount_change = models.DecimalField(
         max_digits=10,

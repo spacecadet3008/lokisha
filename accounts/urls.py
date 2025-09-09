@@ -16,6 +16,8 @@ from .views import (
     CustomerUpdateView,
     CustomerDeleteView,
     get_customers,
+    reset_staff_credentials,
+    create_staff_member,
     VendorListView,
     VendorCreateView,
     VendorUpdateView,
@@ -58,6 +60,10 @@ urlpatterns = [
          name='vendor-update'),
     path('vendors/<int:pk>/delete/', VendorDeleteView.as_view(),
          name='vendor-delete'),
+
+     # staff creata and reset
+     path('staff/create/', create_staff_member, name='create_staff_member'),
+     path('staff/reset/<int:user_id>/', reset_staff_credentials, name='reset_staff_credentials'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

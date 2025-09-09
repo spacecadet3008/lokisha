@@ -161,10 +161,21 @@ def SaleCreateView(request):
     }
 
     if request.method == 'POST':
-        if is_ajax(request=request):
+        # Check if it's an AJAX request
+        is_ajax_request = (request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 
+                          request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest')
+        
+        if is_ajax_request:
             try:
-                # Load the JSON data from the request body
-                data = json.loads(request.body)
+                # Parse JSON data
+                try:
+                    data = json.loads(request.body)
+                except json.JSONDecodeError:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'Invalid JSON format in request body!'
+                    }, status=400)
+                
                 logger.info(f"Received data: {data}")
 
                 # Validate required fields
@@ -174,11 +185,22 @@ def SaleCreateView(request):
                 ]
                 for field in required_fields:
                     if field not in data:
-                        raise ValueError(f"Missing required field: {field}")
+                        return JsonResponse({
+                            'status': 'error',
+                            'message': f"Missing required field: {field}"
+                        }, status=400)
 
                 # Create sale attributes
+                try:
+                    customer = Customer.objects.get(id=int(data['customer']))
+                except Customer.DoesNotExist:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'Customer does not exist!'
+                    }, status=400)
+
                 sale_attributes = {
-                    "customer": Customer.objects.get(id=int(data['customer'])),
+                    "customer": customer,
                     "sub_total": float(data["sub_total"]),
                     "grand_total": float(data["grand_total"]),
                     "tax_amount": float(data.get("tax_amount", 0.0)),
@@ -196,7 +218,10 @@ def SaleCreateView(request):
                     # Create sale details and update item quantities
                     items = data["items"]
                     if not isinstance(items, list):
-                        raise ValueError("Items should be a list")
+                        return JsonResponse({
+                            'status': 'error',
+                            'message': "Items should be a list"
+                        }, status=400)
 
                     for item in items:
                         if not all(
@@ -204,11 +229,24 @@ def SaleCreateView(request):
                                 "id", "price", "quantity", "total_item"
                             ]
                         ):
-                            raise ValueError("Item is missing required fields")
+                            return JsonResponse({
+                                'status': 'error',
+                                'message': "Item is missing required fields"
+                            }, status=400)
 
-                        item_instance = Item.objects.get(id=int(item["id"]))
+                        try:
+                            item_instance = Item.objects.get(id=int(item["id"]))
+                        except Item.DoesNotExist:
+                            return JsonResponse({
+                                'status': 'error',
+                                'message': f"Item with ID {item['id']} does not exist!"
+                            }, status=400)
+
                         if item_instance.quantity < int(item["quantity"]):
-                            raise ValueError(f"Not enough stock for item: {item_instance.name}")
+                            return JsonResponse({
+                                'status': 'error',
+                                'message': f"Not enough stock for item: {item_instance.name}"
+                            }, status=400)
 
                         detail_attributes = {
                             "sale": new_sale,
@@ -228,49 +266,34 @@ def SaleCreateView(request):
                     {
                         'status': 'success',
                         'message': 'Sale created successfully!',
-                        'redirect': '/transactions/sales/'
+                        'redirect': '/transactions/sales/',
+                        'sale_id': new_sale.id
                     }
                 )
 
-            except json.JSONDecodeError:
-                return JsonResponse(
-                    {
-                        'status': 'error',
-                        'message': 'Invalid JSON format in request body!'
-                    }, status=400)
-            except Customer.DoesNotExist:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Customer does not exist!'
-                    }, status=400)
-            except Item.DoesNotExist:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Item does not exist!'
-                    }, status=400)
-            except ValueError as ve:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': f'Value error: {str(ve)}'
-                    }, status=400)
-            except TypeError as te:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': f'Type error: {str(te)}'
-                    }, status=400)
             except Exception as e:
-                logger.error(f"Exception during sale creation: {e}")
+                logger.error(f"Exception during sale creation: {str(e)}", exc_info=True)
                 return JsonResponse(
                     {
                         'status': 'error',
-                        'message': (
-                            f'There was an error during the creation: {str(e)}'
-                        )
+                        'message': f'There was an error during the creation: {str(e)}'
                     }, status=500)
+        else:
+            # Handle form submission (non-AJAX)
+            try:
+                # Extract data from request.POST and request.FILES
+                data = request.POST
+                
+                # Process form data similarly to JSON data
+                # (You'll need to adapt this based on your form structure)
+                pass
+                
+            except Exception as e:
+                logger.error(f"Exception during form processing: {str(e)}", exc_info=True)
+                context['error'] = f'There was an error: {str(e)}'
 
     return render(request, "transactions/sale_create.html", context=context)
-
-
+    
 class SaleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     """
     View to delete a sale.

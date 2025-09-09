@@ -1,0 +1,43 @@
+<!-- templates/confirm_reset.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-header">
+    <h2>Confirm Password Reset</h2>
+</div>
+
+<div class="content-body">
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>Warning:</strong> You are about to reset the password for this staff member.
+    </div>
+    
+    <div class="user-details-card">
+        <div class="user-avatar">
+            <img src="{{ staff_user.profile.image_url }}" alt="{{ staff_user.get_full_name }}" width="80" height="80">
+        </div>
+        <div class="user-info">
+            <h3>{{ staff_user.get_full_name|default:staff_user.username }}</h3>
+            <p><strong>Username:</strong> {{ staff_user.username }}</p>
+            <p><strong>Email:</strong> {{ staff_user.email }}</p>
+            <p><strong>Role:</strong> {{ staff_user.profile.get_role_display }}</p>
+            <p><strong>Status:</strong> {{ staff_user.profile.get_status_display }}</p>
+        </div>
+    </div>
+    
+    <div class="reset-notes">
+        <p><i class="fas fa-info-circle"></i> A new random password will be generated and emailed to {{ staff_user.email }}.</p>
+        <p><i class="fas fa-info-circle"></i> The user will be required to change their password upon first login.</p>
+    </div>
+    
+    <form method="post" class="reset-form">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-key"></i> Confirm Password Reset
+            </button>
+            <a href="{% url 'staff_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
