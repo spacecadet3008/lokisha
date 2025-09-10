@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
 
     'phonenumber_field',
     'crispy_forms',
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
     'transactions.apps.TransactionsConfig',
     'invoice.apps.InvoiceConfig',
     'bills.apps.BillsConfig',
+
 ]
 
 MIDDLEWARE = [
@@ -162,3 +164,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+# TaxJar settings
+TAXJAR_API_KEY = os.environ.get('TAXJAR_API_KEY', 'your-taxjar-api-key-here')
+TAXJAR_API_URL = os.environ.get('TAXJAR_API_URL', 'https://api.taxjar.com')
+
+# Fallback tax rates if TaxJar is unavailable
+FALLBACK_TAX_RATES = {
+    'default': 8.0,  # Default tax rate percentage
+}
+
+# Default store location (where you're shipping from)
+STORE_LOCATION = {
+    'country': 'US',
+    'zip_code': '10001',
+    'state': 'NY',
+    'city': 'New York',
+    'street': '123 Main St'
+}

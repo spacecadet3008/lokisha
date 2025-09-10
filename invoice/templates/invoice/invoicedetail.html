@@ -1,7 +1,7 @@
 <!-- templates/invoice/invoice_detail.html -->
 {% extends "invoice/base_invoice.html" %}
 {% load static %}
-
+{% load humanize %}
 {% block title %}{% if invoice.is_proforma %}Proforma{% else %}Invoice{% endif %} #{{ invoice.invoice_number }}{% endblock %}
 
 {% block content %}
@@ -40,8 +40,8 @@
                             <div class="d-flex align-items-center mb-3">
                                 <img src="{% static 'images/logo/lokisha_1.png' %}" style="width: 150px;"alt="Lokisha Logo" height="60" class="me-3">
                                 <div>
-                                    <h4 class="mb-0 text-success">LOKISHA ENTERPRISE</h4>
-                                    <small class="text-muted">Business Solutions</small>
+                                    <h4 class="mb-0 text-success">LOKISHA GENERAL SUPPLIES</h4>
+                                    <small class="text-muted">Best Quality Better Price</small>
                                 </div>
                             </div>
                             <p class="mb-1">
@@ -121,7 +121,7 @@
                         <table class="table table-bordered">
                             <thead class="table-success">
                                 <tr>
-                                    <th>Item</th>
+                                    <th style="width: 300px;">Item</th>
                                     <th class="text-center">Quantity</th>
                                     <th class="text-end">Unit Price (Tsh)</th>
                                     <th class="text-end">Total (Tsh)</th>
@@ -131,24 +131,24 @@
                                 {% for item in invoice.items.all %}
                                 <tr>
                                     <td>{{ item.item.name }}</td>
-                                    <td class="text-center">{{ item.quantity|floatformat:2 }}</td>
-                                    <td class="text-end">{{ item.price_per_item|floatformat:2 }}</td>
-                                    <td class="text-end">{{ item.total_price|floatformat:2 }}</td>
+                                    <td class="text-center">{{ item.quantity|intcomma:2 }}</td>
+                                    <td class="text-end">{{ item.price_per_item|intcomma:2 }}</td>
+                                    <td class="text-end">{{ item.total_price|intcomma:2 }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                             <tfoot class="table-light">
                                 <tr>
                                     <td colspan="3" class="text-end fw-bold">Subtotal:</td>
-                                    <td class="text-end fw-bold">Tsh {{ invoice.total|floatformat:2 }}</td>
+                                    <td class="text-end fw-bold">Tsh {{ invoice.total|intcomma:2 }}</td>
                                 </tr>
                                 <tr>
                                     <td colspan="3" class="text-end fw-bold">Shipping:</td>
-                                    <td class="text-end fw-bold">Tsh {{ invoice.shipping|floatformat:2 }}</td>
+                                    <td class="text-end fw-bold">Tsh {{ invoice.shipping|intcomma:2 }}</td>
                                 </tr>
                                 <tr class="table-active">
                                     <td colspan="3" class="text-end fw-bold fs-5">Grand Total:</td>
-                                    <td class="text-end fw-bold fs-5 text-success">Tsh {{ invoice.grand_total|floatformat:2 }}</td>
+                                    <td class="text-end fw-bold fs-5 text-success">Tsh {{ invoice.grand_total|intcomma:2 }}</td>
                                 </tr>
                             </tfoot>
                         </table>

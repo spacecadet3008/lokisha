@@ -1,5 +1,7 @@
 from django.db import models
 from django_extensions.db.fields import AutoSlugField
+from .service import taxjar_service
+from django.conf import settings
 
 from store.models import Item
 from accounts.models import Vendor, Customer
@@ -68,6 +70,85 @@ class Sale(models.Model):
         Returns the total quantity of products in the sale.
         """
         return sum(detail.quantity for detail in self.saledetail_set.all())
+    
+    
+    def calculate_tax_with_taxjar(self):
+        """
+        Calculate tax for this sale using TaxJar API
+        """
+        # Prepare order data for TaxJar
+        order_data = {
+            'from_country': settings.STORE_LOCATION['country'],
+            'from_zip': settings.STORE_LOCATION['zip_code'],
+            'from_state': settings.STORE_LOCATION['state'],
+            'from_city': settings.STORE_LOCATION['city'],
+            'from_street': settings.STORE_LOCATION['street'],
+            'to_country': self.customer_country or 'US',
+            'to_zip': self.customer_zip or settings.STORE_LOCATION['zip_code'],
+            'to_state': self.customer_state,
+            'to_city': self.customer_city,
+            'amount': float(self.sub_total),
+            'shipping': 0.0,
+            'line_items': []
+        }
+        
+        # Add line items
+        for detail in self.saledetail_set.all():
+            order_data['line_items'].append({
+                'id': str(detail.item.id),
+                'quantity': detail.quantity,
+                'product_tax_code': self.get_tax_code_for_category(detail.item.category.name),
+                'unit_price': float(detail.price),
+                'discount': 0.0
+            })
+        
+        # Calculate tax using TaxJar
+        tax_result = taxjar_service.calculate_tax_for_order(order_data)
+        
+        return tax_result['amount_to_collect'], tax_result['rate'] * 100, {
+            'taxjar_response': tax_result
+        }
+    
+    def get_tax_code_for_category(self, category_name):
+        """
+        Map category names to TaxJar product tax codes
+        """
+        tax_codes = {
+            'Clothing': '31000',
+            'Electronics': '31000',
+            'Food': '40030',
+            'Books': '81100',
+            'Software': '51010',
+        }
+        return tax_codes.get(category_name, '31000')
+    
+    def save(self, *args, **kwargs):
+        """
+        Override save to calculate tax using TaxJar
+        """
+        if not self.tax_data and self.saledetail_set.exists():
+            try:
+                tax_amount, tax_percentage, tax_breakdown = self.calculate_tax_with_taxjar()
+                self.tax_amount = tax_amount
+                self.tax_percentage = tax_percentage
+                self.tax_data = tax_breakdown
+                
+                # Recalculate grand total
+                self.grand_total = self.sub_total + self.tax_amount
+                
+                # Recalculate change
+                self.amount_change = max(0, self.amount_paid - self.grand_total)
+            except Exception as e:
+                logger.error(f"Error calculating tax with TaxJar: {str(e)}")
+                # Fallback to simple calculation
+                fallback_rate = taxjar_service.get_fallback_rate()
+                self.tax_amount = float(self.sub_total) * (fallback_rate / 100)
+                self.tax_percentage = fallback_rate
+                self.grand_total = self.sub_total + self.tax_amount
+                self.amount_change = max(0, self.amount_paid - self.grand_total)
+                self.tax_data = {'source': 'fallback', 'rate': fallback_rate}
+        
+        super().save(*args, **kwargs)
 
 
 class SaleDetail(models.Model):
@@ -107,6 +188,7 @@ class SaleDetail(models.Model):
             f"Sale ID: {self.sale.id} | "
             f"Quantity: {self.quantity}"
         )
+    
 
 
 class Purchase(models.Model):

@@ -1,6 +1,7 @@
 <!-- templates/invoice/delivery_print.html -->
 <!DOCTYPE html>
 <html lang="en">
+    {% load humanize %}
 <head>
     {% load static %}
     <meta charset="UTF-8">
@@ -58,6 +59,11 @@
         }
         .company-details {
             flex: 1;
+        }
+        .payment-method {
+            background-color: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 15px;
         }
     </style>
 </head>
@@ -139,19 +145,50 @@
                         {% for item in delivery.items.all %}
                         <tr>
                             <td>{{ item.item.name }}</td>
-                            <td class="text-center">{{ item.quantity|floatformat:2 }}</td>
-                            <td class="text-end">{{ item.price_per_item|floatformat:2 }}</td>
-                            <td class="text-end">{{ item.total_price|floatformat:2 }}</td>
+                            <td class="text-center">{{ item.quantity|intcomma:2 }}</td>
+                            <td class="text-end">{{ item.price_per_item|intcomma:2 }}</td>
+                            <td class="text-end">{{ item.total_price|intcomma:2 }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                     <tfoot class="table-light">
                         <tr>
                             <td colspan="3" class="text-end fw-bold">Total Value:</td>
-                            <td class="text-end fw-bold">Tsh {{ delivery_total|floatformat:2 }}</td>
+                            <td class="text-end fw-bold">Tsh {{ deliveryitem.total_price|intcomma:2 }}</td>
                         </tr>
                     </tfoot>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Method Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="payment-method">
+                <h6 class="mb-3"><i class="fas fa-credit-card me-2"></i>Payment Methods</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-2"><strong>Bank Transfer:</strong></p>
+                        <p class="mb-1">Bank: CRDB Bank</p>
+                        <p class="mb-1">Account Name: Lokisha Company Limited</p>
+                        <p class="mb-1">Account Number: 0152356789001</p>
+                        <p class="mb-0">SWIFT Code: CORUTZTZ</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-2"><strong>Mobile Money:</strong></p>
+                        <p class="mb-1">Tigo Pesa: +255 765 432 100</p>
+                        <p class="mb-1">M-Pesa: +255 754 321 000</p>
+                        <p class="mb-1">Airtel Money: +255 783 123 456</p>
+                        <p class="mb-0">Account Name: Lokisha Enterprise</p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <p class="mb-1"><strong>Cash Payment:</strong></p>
+                        <p class="mb-0">Pay directly to our office or delivery personnel</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -187,7 +224,11 @@
         <div class="col-12 text-center">
             <p class="text-muted mb-0">
                 <i class="fas fa-phone me-1"></i> +255 123 456 789 | 
-                <i class="fas fa-envelope ms-2 me-1"></i> info@lokisha.co.tz
+                <i class="fas fa-envelope ms-2 me-1"></i> info@lokisha.co.tz |
+                <i class="fas fa-globe ms-2 me-1"></i> www.lokisha.co.tz
+            </p>
+            <p class="text-muted small mt-1">
+                Thank you for your business! • Terms: Payment due within 30 days
             </p>
         </div>
     </div>
